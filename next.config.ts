@@ -1,7 +1,30 @@
 import type { NextConfig } from "next";
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  cacheOnNavigation: true,
+  reloadOnOnline: false, // ne pas couper une chanson en cours au retour du réseau
+  disable: process.env.NODE_ENV === "development",
+});
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  outputFileTracingRoot: __dirname,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
+    ];
+  },
+  // Les anciennes URLs WordPress terminent par "/" : on garde la compatibilité.
+  trailingSlash: false,
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

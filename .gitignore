@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Serwist
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+
+# Modèle de configuration (sans secrets)
+!.env.example
