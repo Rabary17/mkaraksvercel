@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { FirebaseError } from "firebase-admin";
 
 export async function POST(req: Request) {
   try {
@@ -11,11 +12,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Vérifier le token Firebase
     const decodedToken = await adminAuth.verifyIdToken(body.idToken);
     const uid = decodedToken.uid;
 
-    // Récupérer l'utilisateur depuis Firestore
     const userDoc = await adminDb.collection("users").doc(uid).get();
     const user = userDoc.data();
 
@@ -23,9 +22,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Utilisateur non trouvé." }, { status: 404 });
     }
 
-    // Créer une session cookie
     const sessionCookie = await adminAuth.createSessionCookie(body.idToken, {
-      expiresIn: 60 * 60 * 24 * 7 * 1000, // 7 jours
+      expiresIn: 60 * 60 * 24 * 7 * 1000,
     });
 
     const response = NextResponse.json({ user });
@@ -37,8 +35,9 @@ export async function POST(req: Request) {
     });
 
     return response;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Login error:", error);
-    return NextResponse.json({ error: error.message || "Erreur lors de la connexion." }, { status: 401 });
+    const message = error instanceof FirebaseError ? error.message : "Erreur lors de la connexion.";
+    return NextResponse.json({ error: message }, { status: 401 });
   }
 }

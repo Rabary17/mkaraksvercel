@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { FirebaseError } from "firebase-admin";
 
 export async function POST(req: Request) {
   try {
@@ -11,14 +12,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Créer l'utilisateur dans Firebase Auth
     const userRecord = await adminAuth.createUser({
       email: body.email,
       password: body.password,
       displayName: body.name,
     });
 
-    // Enregistrer dans Firestore
     await adminDb.collection("users").doc(userRecord.uid).set({
       id: userRecord.uid,
       email: body.email,
@@ -26,15 +25,17 @@ export async function POST(req: Request) {
       createdAt: Date.now(),
     });
 
-    // Créer un token custom
     const token = await adminAuth.createCustomToken(userRecord.uid);
 
     return NextResponse.json({ user: { id: userRecord.uid, email: body.email }, token });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Register error:", error);
-    if (error.code === "auth/email-already-exists") {
-      return NextResponse.json({ error: "Cet email existe déjà." }, { status: 409 });
+    if (error instanceof FirebaseError) {
+      if (error.code === "auth/email-already-exists") {
+        return NextResponse.json({ error: "Cet email existe déjà." }, { status: 409 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json({ error: error.message || "Erreur lors de l'inscription." }, { status: 500 });
+    return NextResponse.json({ error: "Erreur lors de l'inscription." }, { status: 500 });
   }
 }

@@ -30,7 +30,7 @@ export function useAuth() {
             body: JSON.stringify({ idToken }),
           });
           setUser(firebaseUser);
-        } catch (err) {
+        } catch {
           console.error("Failed to create session:", err);
           setError("Erreur lors de la connexion.");
         }
@@ -48,7 +48,7 @@ export function useAuth() {
       setLoading(true);
       try {
         await signInWithEmailAndPassword(auth, email, password);
-      } catch (err) {
+      } catch {
         const firebaseErr = err as FirebaseError;
         const errorMsg = firebaseErr.code === "auth/user-not-found" 
           ? "Utilisateur non trouvé."
@@ -69,7 +69,7 @@ export function useAuth() {
       setLoading(true);
       try {
         await createUserWithEmailAndPassword(auth, email, password);
-      } catch (err) {
+      } catch {
         const firebaseErr = err as FirebaseError;
         const errorMsg = firebaseErr.code === "auth/email-already-in-use"
           ? "Cet email existe déjà."
@@ -90,7 +90,7 @@ export function useAuth() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (err) {
+    } catch {
       const firebaseErr = err as FirebaseError;
       setError(firebaseErr.message || "Erreur lors de la connexion Google.");
     } finally {
@@ -104,7 +104,7 @@ export function useAuth() {
       await fetch("/api/auth/logout", { method: "POST" });
       await signOut(auth);
       setUser(null);
-    } catch (err) {
+    } catch {
       setError("Erreur lors de la déconnexion.");
     }
   }, []);
