@@ -14,7 +14,7 @@
     "firebase": "^13.2.0",
     "firebase-admin": "^14.5.0",
     "idb": "^8.0.4",
-    "jose": "^6.2.16",
+    "jose": "^4.15.9",
     "next": "15.5.29",
     "ogg-opus-decoder": "^1.7.5",
     "react": "19.1.0",
@@ -37,7 +37,8 @@
     "typescript": "^5"
   },
   "overrides": {
-    "magic-string": "^0.30.17"
+    "magic-string": "^0.30.17",
+    "jose": "^4.15.9"
   },
   "engines": {
     "node": ">=20.19"

@@ -15,11 +15,20 @@ export async function POST(req: Request) {
     const decodedToken = await adminAuth.verifyIdToken(body.idToken);
     const uid = decodedToken.uid;
 
-    const userDoc = await adminDb.collection("users").doc(uid).get();
-    const user = userDoc.data();
+    const userRef = adminDb.collection("users").doc(uid);
+    const userDoc = await userRef.get();
+    let user = userDoc.data();
 
+    // Première connexion (inscription email/mdp ou Google) : le document
+    // Firestore n'existe pas encore, on le crée à partir du token décodé.
     if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouvé." }, { status: 404 });
+      user = {
+        id: uid,
+        email: decodedToken.email || "",
+        name: decodedToken.name || "",
+        createdAt: Date.now(),
+      };
+      await userRef.set(user);
     }
 
     const sessionCookie = await adminAuth.createSessionCookie(body.idToken, {

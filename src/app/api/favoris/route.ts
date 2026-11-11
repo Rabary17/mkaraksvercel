@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 async function getUserFromSession(req: NextRequest) {
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
     .orderBy("addedAt", "desc")
     .get();
 
-  const favoris = snapshot.docs.map((doc) => doc.data());
+  const favoris = snapshot.docs.map((doc: QueryDocumentSnapshot) => doc.data());
   return NextResponse.json(favoris);
 }
 

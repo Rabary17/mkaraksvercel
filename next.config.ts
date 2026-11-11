@@ -11,6 +11,10 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
+  // firebase-admin (via jwks-rsa -> jose) casse si webpack l'empaquette : l'ESM
+  // de jose se mélange avec le require() CommonJS de jwks-rsa. Laisser Node
+  // le charger nativement au runtime plutôt que de le bundler.
+  serverExternalPackages: ["firebase-admin"],
   async headers() {
     return [
       {
