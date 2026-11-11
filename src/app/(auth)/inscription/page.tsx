@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Blobs, Logo } from "@/components/ui/Blobs";
-import { PasswordField } from "@/components/auth/PasswordField";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function RegisterPage() {
@@ -83,18 +82,36 @@ export default function RegisterPage() {
                 disabled={loading}
               />
             </div>
-            <PasswordField
-              label="Mot de passe"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
-            <PasswordField
-              label="Confirmer le mot de passe"
-              value={password2}
-              onChange={(e) => setPassword2(e.target.value)}
-              disabled={loading}
-            />
+            <div>
+              <label htmlFor="password" className="field-label">
+                Mot de passe
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete="new-password"
+                className="field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="password2" className="field-label">
+                Confirmer le mot de passe
+              </label>
+              <input
+                id="password2"
+                type="password"
+                required
+                autoComplete="new-password"
+                className="field"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                disabled={loading}
+              />
+            </div>
             {(error || localError) && (
               <p role="alert" className="rounded-2xl bg-pink/10 px-4 py-3 text-sm font-bold text-pink-deep">
                 {error || localError}

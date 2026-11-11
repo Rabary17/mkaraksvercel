@@ -3,9 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Blobs, Logo } from "@/components/ui/Blobs";
-import { PasswordField } from "@/components/auth/PasswordField";
 import { useAuth } from "@/hooks/useAuth";
-import { Icon } from "@/components/ui/Icon";
 
 const LOST_PASSWORD_URL = process.env.NEXT_PUBLIC_LOST_PASSWORD_URL || "/mot-de-passe-oublie";
 
@@ -59,11 +57,21 @@ export default function LoginPage() {
                 disabled={loading}
               />
             </div>
-            <PasswordField
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-            />
+            <div>
+              <label htmlFor="password" className="field-label">
+                Mot de passe
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                className="field"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+              />
+            </div>
             <div className="text-right">
               <a href={LOST_PASSWORD_URL} className="text-[15px] font-bold text-pink">
                 Mot de passe oublié ?
