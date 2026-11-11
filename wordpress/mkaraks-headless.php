@@ -160,3 +160,41 @@ add_action( 'edited_artist', function ( $term_id ) {
 } );
 add_action( 'created_artist', fn() => mkaraks_revalidate( array( 'artists' ) ) );
 add_action( 'deleted_post', fn() => mkaraks_revalidate( array( 'songs' ) ) );
+
+/* -------------------------------------------------------------------------- */
+/* 4. Mise à l'écart des moteurs de recherche                                  */
+/* -------------------------------------------------------------------------- */
+/**
+ * Un WordPress devenu backend ne doit plus être indexé : son contenu est servi
+ * par le front, et le laisser visible crée un duplicata de chaque page.
+ *
+ * ACTIVATION EXPLICITE, dans wp-config.php :
+ *   define( 'MKARAKS_NOINDEX', true );
+ *
+ * Jamais actif par défaut : installé par mégarde sur le site public, ce plugin
+ * effacerait son référencement sans que personne ne s'en aperçoive avant des
+ * semaines.
+ *
+ * NE PAS compléter par « Disallow: / » dans robots.txt. Un Disallow interdit le
+ * CRAWL, pas l'INDEXATION : Google cesse de relire la page, ne voit donc jamais
+ * le noindex ci-dessous, et les URLs déjà connues restent dans l'index, privées
+ * de titre et de description. L'ordre correct est de laisser crawler jusqu'à
+ * disparition des pages, et seulement ensuite d'économiser le crawl.
+ */
+if ( defined( 'MKARAKS_NOINDEX' ) && MKARAKS_NOINDEX ) {
+
+	// En-tête HTTP : la seule directive que Google suit sur une réponse non HTML.
+	add_action( 'send_headers', function () {
+		if ( ! headers_sent() ) {
+			header( 'X-Robots-Tag: noindex, nofollow, noarchive', true );
+		}
+	} );
+
+	// Et la balise, pour les robots qui ne lisent que le HTML.
+	add_action( 'wp_head', function () {
+		echo '<meta name="robots" content="noindex, nofollow" />' . "\n";
+	}, 1 );
+
+	// Un sitemap qui annonce des pages non indexables envoie un signal contradictoire.
+	add_filter( 'wp_sitemaps_enabled', '__return_false' );
+}

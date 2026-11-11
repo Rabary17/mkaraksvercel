@@ -154,12 +154,14 @@ async function inBatches<T>(count: number, run: (n: number) => Promise<T>, size 
 export interface SitemapEntry {
   path: string;
   lastModified?: Date;
+  /** Même critère que `estJouable` dans lib/seo : la présence d'un fichier audio. */
+  jouable?: boolean;
 }
 
 interface WpSitemapSong {
   slug: string;
   modified?: string;
-  mkaraks?: { artist: { slug: string } | null };
+  mkaraks?: { artist: { slug: string } | null; audio: string | null };
 }
 
 /**
@@ -181,6 +183,7 @@ export async function getAllSongPaths(): Promise<SitemapEntry[]> {
   return songs.map((s) => ({
     path: `/artist/${s.mkaraks?.artist?.slug ?? "inconnu"}/${s.slug}`,
     lastModified: s.modified ? new Date(s.modified) : undefined,
+    jouable: Boolean(s.mkaraks?.audio),
   }));
 }
 

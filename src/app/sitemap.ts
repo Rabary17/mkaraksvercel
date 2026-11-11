@@ -40,11 +40,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.6,
     })),
+    // Une centaine de titres sont jouables, les autres sont des pages de paroles.
+    // Les annoncer à égalité laisserait Google répartir son budget de crawl au
+    // hasard sur 14 500 URLs, dont les plus utiles ne sont pas les plus nombreuses.
     ...songs.map((s) => ({
       url: absolute(s.path),
       lastModified: s.lastModified,
       changeFrequency: "monthly" as const,
-      priority: 0.7,
+      priority: s.jouable ? 0.8 : 0.5,
     })),
   ];
 }
