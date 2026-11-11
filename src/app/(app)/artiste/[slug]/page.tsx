@@ -5,6 +5,8 @@ import { SongGrid } from "@/components/library/SongRow";
 import { ArtistFavButton } from "@/components/library/ArtistCard";
 import { PlayAllButton } from "@/components/library/PlayAllButton";
 import { tileColor } from "@/components/ui/LetterTile";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { artistJsonLd } from "@/lib/seo";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -16,7 +18,13 @@ type Params = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const artist = await getArtist((await params).slug);
-  return artist ? { title: `${artist.name} – Karaoké`, description: `Tous les karaokés de ${artist.name} sur Mkaraks.` } : {};
+  return artist
+    ? {
+        title: `${artist.name} – Karaoké`,
+        description: `Tous les karaokés de ${artist.name} sur Mkaraks.`,
+        alternates: { canonical: `/artiste/${artist.slug}` },
+      }
+    : {};
 }
 
 export default async function ArtistPage({ params }: Params) {
@@ -27,6 +35,7 @@ export default async function ArtistPage({ params }: Params) {
 
   return (
     <div className="space-y-8">
+      <JsonLd data={artistJsonLd(artist, songs)} />
       <header className={`relative overflow-hidden rounded-[28px] p-6 md:flex md:items-end md:gap-8 md:p-10 ${tileColor(artist.name)}`}>
         <div aria-hidden className="absolute -top-16 -right-16 size-56 rounded-full bg-white/25 md:size-80" />
         <span className="relative grid size-20 place-items-center rounded-full bg-white font-display text-4xl font-extrabold md:size-32 md:text-6xl">{letter}</span>

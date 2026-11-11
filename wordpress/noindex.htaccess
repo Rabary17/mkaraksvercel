@@ -1,0 +1,32 @@
+# ============================================================================
+# Rendre un WordPress invisible aux moteurs — à placer en haut du .htaccess
+# à la racine du site concerné.
+#
+# À APPLIQUER MAINTENANT SUR : dev.mkaraks.com
+#   Son robots.txt ne contient qu'un « Crawl-delay: 10 », sans aucun Disallow,
+#   et aucune meta robots. Le site de dev est donc entièrement indexable et
+#   expose le même contenu que la production : c'est du contenu dupliqué.
+#
+# À NE SURTOUT PAS APPLIQUER AUJOURD'HUI SUR : mkaraks.com
+#   C'est le site vivant, celui qui porte le référencement acquis. Il ne devient
+#   « backend invisible » qu'APRÈS la bascule, une fois déménagé sur son propre
+#   sous-domaine (admin.mkaraks.com), pendant que mkaraks.com sert le Next.js.
+#   Le désindexer avant reviendrait à effacer son référencement.
+# ============================================================================
+
+<IfModule mod_headers.c>
+    Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+</IfModule>
+
+# ----------------------------------------------------------------------------
+# NE PAS ajouter « Disallow: / » dans robots.txt pour aller plus vite.
+#
+# robots.txt interdit le CRAWL, pas l'INDEXATION. Un Disallow empêche Google de
+# relire la page — donc de voir le noindex ci-dessus — et les URLs déjà connues
+# restent dans l'index, sans titre ni description. C'est le contraire du but.
+#
+# L'ordre correct :
+#   1. poser l'en-tête ci-dessus et laisser Google crawler librement ;
+#   2. attendre la disparition des pages (Search Console, quelques semaines) ;
+#   3. seulement ensuite, si on veut économiser du crawl, poser le Disallow.
+# ----------------------------------------------------------------------------

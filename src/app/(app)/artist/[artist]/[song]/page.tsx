@@ -5,6 +5,8 @@ import { getSong, songUrl, toLite } from "@/lib/wp";
 import { SongPageActions } from "@/components/library/SongPageActions";
 import { LetterTile } from "@/components/ui/LetterTile";
 import { Icon } from "@/components/ui/Icon";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { songJsonLd } from "@/lib/seo";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -36,6 +38,7 @@ export default async function SongPage({ params }: Params) {
 
   return (
     <article className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr] lg:gap-12">
+      <JsonLd data={songJsonLd(song)} />
       {/* Colonne fiche (fixe sur desktop) */}
       <div className="space-y-6 lg:sticky lg:top-10 lg:self-start">
         <Link href={song.media.artist ? `/artiste/${song.media.artist.slug}` : "/"} className="icon-btn" aria-label="Retour">

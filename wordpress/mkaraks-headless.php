@@ -14,10 +14,12 @@ defined( 'ABSPATH' ) || exit;
 
 /** Noms des méta JetEngine du CPT karaoke. À vérifier dans JetEngine → Meta Boxes. */
 const MKARAKS_META = array(
-	'audio'  => 'audio',
-	'lyrics' => 'lyrics',
-	'chord'  => 'chord',
-	'key'    => 'key',
+	'audio'  => 'instrument_url',
+	'lyrics' => 'lyrics_url',
+	'chord'  => 'chord_url',
+	'key'    => 'tonalite',
+	'bpm'    => 'bpm',
+	'genre'  => 'genre',
 );
 
 /* -------------------------------------------------------------------------- */

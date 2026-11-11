@@ -2,6 +2,8 @@ import { getLatestSongs, toLite } from "@/lib/wp";
 import { HomeHero } from "@/components/home/HomeHero";
 import { SongGrid } from "@/components/library/SongRow";
 import { Pager } from "@/components/ui/Pager";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { siteJsonLd } from "@/lib/seo";
 
 export const revalidate = 3600;
 
@@ -11,6 +13,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
 
   return (
     <div className="space-y-8 md:space-y-12">
+      <JsonLd data={siteJsonLd()} />
       <HomeHero />
       <section className="space-y-4">
         <div className="flex items-baseline justify-between">
