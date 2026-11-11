@@ -1,20 +1,40 @@
 import { NextResponse } from "next/server";
-import { wpRegister } from "@/lib/wp";
-import { createSession } from "@/lib/session";
+import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => null)) as { name?: string; email?: string; password?: string } | null;
-  const name = body?.name?.trim() ?? "";
-  const email = body?.email?.trim() ?? "";
-  const password = body?.password ?? "";
+  try {
+    const body = await req.json().catch(() => null);
+    if (!body?.email || !body?.password) {
+      return NextResponse.json(
+        { error: "Email et mot de passe requis." },
+        { status: 400 }
+      );
+    }
 
-  if (!name || !email || !password) return NextResponse.json({ error: "Tous les champs sont requis." }, { status: 400 });
-  if (password.length < 8) return NextResponse.json({ error: "Mot de passe : 8 caractères minimum." }, { status: 400 });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Adresse e-mail invalide." }, { status: 400 });
+    // Créer l'utilisateur dans Firebase Auth
+    const userRecord = await adminAuth.createUser({
+      email: body.email,
+      password: body.password,
+      displayName: body.name,
+    });
 
-  const result = await wpRegister(name, email, password);
-  if ("error" in result) return NextResponse.json({ error: result.error }, { status: result.status });
+    // Enregistrer dans Firestore
+    await adminDb.collection("users").doc(userRecord.uid).set({
+      id: userRecord.uid,
+      email: body.email,
+      name: body.name || "",
+      createdAt: Date.now(),
+    });
 
-  await createSession(result);
-  return NextResponse.json({ user: result });
+    // Créer un token custom
+    const token = await adminAuth.createCustomToken(userRecord.uid);
+
+    return NextResponse.json({ user: { id: userRecord.uid, email: body.email }, token });
+  } catch (error: any) {
+    console.error("Register error:", error);
+    if (error.code === "auth/email-already-exists") {
+      return NextResponse.json({ error: "Cet email existe déjà." }, { status: 409 });
+    }
+    return NextResponse.json({ error: error.message || "Erreur lors de l'inscription." }, { status: 500 });
+  }
 }

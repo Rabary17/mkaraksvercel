@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@serwist/next": "^9.5.13",
+    "firebase": "^13.2.0",
+    "firebase-admin": "^14.5.0",
     "idb": "^8.0.4",
     "jose": "^6.2.16",
     "next": "15.5.29",
