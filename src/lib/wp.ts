@@ -55,11 +55,22 @@ function toArtist(t: WpTerm): Artist {
   return { id: t.id, slug: t.slug, name: decodeEntities(t.name), count: t.count };
 }
 
-export async function getLatestSongs(page = 1, search?: string) {
+export async function getLatestSongs(page = 1, search?: string, jouablesSeulement = false) {
   const q = new URLSearchParams({ per_page: "24", page: String(page), _fields: SONG_FIELDS });
   if (search) q.set("search", search);
+  // Filtre servi par le plugin (rest_karaoke_query). Si le plugin n'est pas à
+  // jour, WordPress ignore le paramètre et renvoie tout : on affiche trop, on ne
+  // casse rien.
+  if (jouablesSeulement) q.set("jouable", "1");
   const { data, total } = await wpFetch<WpSong[]>(`/wp/v2/karaoke?${q}`, ["songs"]);
   return { songs: data.map(toSong), total };
+}
+
+/** Les deux volumes du catalogue, en deux requêtes d'un seul élément. */
+export async function getCatalogueCounts(): Promise<{ jouables: number; total: number }> {
+  const tete = (params: string) => wpFetch<WpSong[]>(`/wp/v2/karaoke?per_page=1&_fields=id${params}`, ["songs"]);
+  const [j, t] = await Promise.all([tete("&jouable=1"), tete("")]);
+  return { jouables: j.total, total: t.total };
 }
 
 export async function getSong(slug: string): Promise<Song | null> {

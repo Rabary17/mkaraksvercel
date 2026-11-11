@@ -19,6 +19,16 @@ const PAGES_FIXES: { path: string; priority: number }[] = [
   { path: "/recherche", priority: 0.3 },
 ];
 
+/**
+ * Un sitemap réduit vaut mieux qu'une erreur 500, que Google interprète comme
+ * un fichier à abandonner pour plusieurs jours. Mais une panne avalée en
+ * silence donne un sitemap amputé que personne ne remarque : on trace.
+ */
+const sansQuoi = (quoi: string) => (erreur: unknown) => {
+  console.error(`[sitemap] ${quoi} indisponibles, sitemap incomplet :`, erreur);
+  return [];
+};
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base: MetadataRoute.Sitemap = PAGES_FIXES.map((p) => ({
     url: absolute(p.path),
@@ -29,8 +39,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // WordPress indisponible : mieux vaut un sitemap réduit qu'une erreur 500, qui
   // ferait abandonner le fichier à Google pour plusieurs jours.
   const [songs, artists] = await Promise.all([
-    getAllSongPaths().catch(() => []),
-    getAllArtistPaths().catch(() => []),
+    getAllSongPaths().catch(sansQuoi("chansons")),
+    getAllArtistPaths().catch(sansQuoi("artistes")),
   ]);
 
   return [

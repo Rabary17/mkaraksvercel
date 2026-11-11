@@ -198,3 +198,46 @@ if ( defined( 'MKARAKS_NOINDEX' ) && MKARAKS_NOINDEX ) {
 	// Un sitemap qui annonce des pages non indexables envoie un signal contradictoire.
 	add_filter( 'wp_sitemaps_enabled', '__return_false' );
 }
+
+/* -------------------------------------------------------------------------- */
+/* 5. Filtre « jouable » : ne remonter que les titres qui ont un fichier audio  */
+/* -------------------------------------------------------------------------- */
+/**
+ * GET /wp/v2/karaoke?jouable=1
+ *
+ * Sur ce catalogue, 104 chansons sur 14 517 ont un fichier audio. Les autres
+ * portent les paroles, ce qui a sa valeur, mais un visiteur qui parcourt la
+ * liste tombe sur une page non chantable 99 fois sur 100 — et conclut que le
+ * site ne marche pas, au lieu de comprendre que le catalogue démarre.
+ *
+ * L'API REST ne filtre sur aucune méta par défaut : sans ce filtre, le front ne
+ * peut pas distinguer les deux, sauf à parcourir les 146 pages du catalogue.
+ */
+add_filter( 'rest_karaoke_query', function ( $args, $request ) {
+	if ( '1' !== (string) $request->get_param( 'jouable' ) ) {
+		return $args;
+	}
+	// EXISTS seul ne suffit pas : une méta créée puis vidée reste présente en base.
+	$args['meta_query'] = array(
+		array(
+			'key'     => MKARAKS_META['audio'],
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => MKARAKS_META['audio'],
+			'value'   => '',
+			'compare' => '!=',
+		),
+	);
+	return $args;
+}, 10, 2 );
+
+/** Déclare le paramètre pour qu'il apparaisse dans la description de la route. */
+add_filter( 'rest_karaoke_collection_params', function ( $params ) {
+	$params['jouable'] = array(
+		'description' => 'À 1, ne retourne que les chansons ayant un fichier audio.',
+		'type'        => 'string',
+		'enum'        => array( '0', '1' ),
+	);
+	return $params;
+} );
