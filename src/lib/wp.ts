@@ -20,7 +20,7 @@ interface WpTerm {
   count: number;
 }
 
-const EMPTY_MEDIA: SongMedia = { artist: null, audio: null, lyrics: null, chord: null, key: null };
+const EMPTY_MEDIA: SongMedia = { artist: null, audio: null, lyrics: null, chord: null, key: null, bpm: null, genre: null };
 
 export function decodeEntities(s: string): string {
   return s
@@ -33,9 +33,9 @@ export function decodeEntities(s: string): string {
     .replace(/&gt;/g, ">");
 }
 
-async function wpFetch<T>(path: string, tags: string[]): Promise<{ data: T; total: number }> {
+async function wpFetch<T>(path: string, tags: string[], revalidate = REVALIDATE): Promise<{ data: T; total: number }> {
   const res = await fetch(`${env.wpUrl}/wp-json${path}`, {
-    next: { revalidate: REVALIDATE, tags: ["wp", ...tags] },
+    next: { revalidate, tags: ["wp", ...tags] },
   });
   if (!res.ok) throw new Error(`WordPress ${res.status} sur ${path}`);
   return { data: (await res.json()) as T, total: Number(res.headers.get("X-WP-Total") || 0) };
@@ -55,11 +55,22 @@ function toArtist(t: WpTerm): Artist {
   return { id: t.id, slug: t.slug, name: decodeEntities(t.name), count: t.count };
 }
 
-export async function getLatestSongs(page = 1, search?: string) {
+export async function getLatestSongs(page = 1, search?: string, jouablesSeulement = false) {
   const q = new URLSearchParams({ per_page: "24", page: String(page), _fields: SONG_FIELDS });
   if (search) q.set("search", search);
+  // Filtre servi par le plugin (rest_karaoke_query). Si le plugin n'est pas à
+  // jour, WordPress ignore le paramètre et renvoie tout : on affiche trop, on ne
+  // casse rien.
+  if (jouablesSeulement) q.set("jouable", "1");
   const { data, total } = await wpFetch<WpSong[]>(`/wp/v2/karaoke?${q}`, ["songs"]);
   return { songs: data.map(toSong), total };
+}
+
+/** Les deux volumes du catalogue, en deux requêtes d'un seul élément. */
+export async function getCatalogueCounts(): Promise<{ jouables: number; total: number }> {
+  const tete = (params: string) => wpFetch<WpSong[]>(`/wp/v2/karaoke?per_page=1&_fields=id${params}`, ["songs"]);
+  const [j, t] = await Promise.all([tete("&jouable=1"), tete("")]);
+  return { jouables: j.total, total: t.total };
 }
 
 export async function getSong(slug: string): Promise<Song | null> {
@@ -121,6 +132,75 @@ export async function wpRegister(
   const data = (await res.json().catch(() => ({}))) as { id?: number; name?: string; message?: string };
   if (!res.ok || !data.id) return { error: data.message ?? "Inscription impossible.", status: res.status === 409 ? 409 : 400 };
   return { id: data.id, name: data.name ?? name };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Sitemap : parcours complet du catalogue                                     */
+/* -------------------------------------------------------------------------- */
+
+/** Maximum autorisé par l'API REST de WordPress. */
+const SITEMAP_PER_PAGE = 100;
+
+/**
+ * Le sitemap se met a jour une fois par jour, et porte un tag A LUI.
+ * Avec le tag "songs", la moindre correction de typo dans WordPress purgerait
+ * le cache et relancerait les 146 requetes du parcours complet.
+ */
+const SITEMAP_REVALIDATE = 86400;
+const SITEMAP_TAG = ["sitemap"];
+
+/**
+ * 146 requêtes enchaînées dépasseraient le délai d'exécution de Vercel ; 146 d'un
+ * coup mettraient WordPress à genoux. On avance donc par lots.
+ */
+async function inBatches<T>(count: number, run: (n: number) => Promise<T>, size = 16): Promise<T[]> {
+  const out: T[] = [];
+  for (let start = 1; start <= count; start += size) {
+    const batch = Array.from({ length: Math.min(size, count - start + 1) }, (_, i) => start + i);
+    out.push(...(await Promise.all(batch.map(run))));
+  }
+  return out;
+}
+
+export interface SitemapEntry {
+  path: string;
+  lastModified?: Date;
+  /** Même critère que `estJouable` dans lib/seo : la présence d'un fichier audio. */
+  jouable?: boolean;
+}
+
+interface WpSitemapSong {
+  slug: string;
+  modified?: string;
+  mkaraks?: { artist: { slug: string } | null; audio: string | null };
+}
+
+/**
+ * Toutes les pages d'un type, en paginant sur un ordre STABLE (`id` croissant).
+ * L'ordre par défaut est la date : un article republié se déplacerait d'une page
+ * à l'autre pendant le parcours, et une URL serait vue deux fois ou jamais.
+ */
+async function allPages<T>(path: string, tags: string[]): Promise<T[]> {
+  const url = (page: number) => `${path}&per_page=${SITEMAP_PER_PAGE}&page=${page}&orderby=id&order=asc`;
+  const first = await wpFetch<T[]>(url(1), tags, SITEMAP_REVALIDATE);
+  const pages = Math.ceil(first.total / SITEMAP_PER_PAGE);
+  if (pages <= 1) return first.data;
+  const rest = await inBatches(pages - 1, (n) => wpFetch<T[]>(url(n + 1), tags, SITEMAP_REVALIDATE).then((r) => r.data));
+  return [first.data, ...rest].flat();
+}
+
+export async function getAllSongPaths(): Promise<SitemapEntry[]> {
+  const songs = await allPages<WpSitemapSong>("/wp/v2/karaoke?_fields=slug,modified,mkaraks", SITEMAP_TAG);
+  return songs.map((s) => ({
+    path: `/artist/${s.mkaraks?.artist?.slug ?? "inconnu"}/${s.slug}`,
+    lastModified: s.modified ? new Date(s.modified) : undefined,
+    jouable: Boolean(s.mkaraks?.audio),
+  }));
+}
+
+export async function getAllArtistPaths(): Promise<SitemapEntry[]> {
+  const terms = await allPages<{ slug: string }>("/wp/v2/artist?_fields=slug&hide_empty=true", SITEMAP_TAG);
+  return terms.map((t) => ({ path: `/artiste/${t.slug}` }));
 }
 
 export function songUrl(song: Song) {

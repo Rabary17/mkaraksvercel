@@ -14,10 +14,12 @@ defined( 'ABSPATH' ) || exit;
 
 /** Noms des méta JetEngine du CPT karaoke. À vérifier dans JetEngine → Meta Boxes. */
 const MKARAKS_META = array(
-	'audio'  => 'audio',
-	'lyrics' => 'lyrics',
-	'chord'  => 'chord',
-	'key'    => 'key',
+	'audio'  => 'instrument_url',
+	'lyrics' => 'lyrics_url',
+	'chord'  => 'chord_url',
+	'key'    => 'tonalite',
+	'bpm'    => 'bpm',
+	'genre'  => 'genre',
 );
 
 /* -------------------------------------------------------------------------- */
@@ -158,3 +160,84 @@ add_action( 'edited_artist', function ( $term_id ) {
 } );
 add_action( 'created_artist', fn() => mkaraks_revalidate( array( 'artists' ) ) );
 add_action( 'deleted_post', fn() => mkaraks_revalidate( array( 'songs' ) ) );
+
+/* -------------------------------------------------------------------------- */
+/* 4. Mise à l'écart des moteurs de recherche                                  */
+/* -------------------------------------------------------------------------- */
+/**
+ * Un WordPress devenu backend ne doit plus être indexé : son contenu est servi
+ * par le front, et le laisser visible crée un duplicata de chaque page.
+ *
+ * ACTIVATION EXPLICITE, dans wp-config.php :
+ *   define( 'MKARAKS_NOINDEX', true );
+ *
+ * Jamais actif par défaut : installé par mégarde sur le site public, ce plugin
+ * effacerait son référencement sans que personne ne s'en aperçoive avant des
+ * semaines.
+ *
+ * NE PAS compléter par « Disallow: / » dans robots.txt. Un Disallow interdit le
+ * CRAWL, pas l'INDEXATION : Google cesse de relire la page, ne voit donc jamais
+ * le noindex ci-dessous, et les URLs déjà connues restent dans l'index, privées
+ * de titre et de description. L'ordre correct est de laisser crawler jusqu'à
+ * disparition des pages, et seulement ensuite d'économiser le crawl.
+ */
+if ( defined( 'MKARAKS_NOINDEX' ) && MKARAKS_NOINDEX ) {
+
+	// En-tête HTTP : la seule directive que Google suit sur une réponse non HTML.
+	add_action( 'send_headers', function () {
+		if ( ! headers_sent() ) {
+			header( 'X-Robots-Tag: noindex, nofollow, noarchive', true );
+		}
+	} );
+
+	// Et la balise, pour les robots qui ne lisent que le HTML.
+	add_action( 'wp_head', function () {
+		echo '<meta name="robots" content="noindex, nofollow" />' . "\n";
+	}, 1 );
+
+	// Un sitemap qui annonce des pages non indexables envoie un signal contradictoire.
+	add_filter( 'wp_sitemaps_enabled', '__return_false' );
+}
+
+/* -------------------------------------------------------------------------- */
+/* 5. Filtre « jouable » : ne remonter que les titres qui ont un fichier audio  */
+/* -------------------------------------------------------------------------- */
+/**
+ * GET /wp/v2/karaoke?jouable=1
+ *
+ * Sur ce catalogue, 104 chansons sur 14 517 ont un fichier audio. Les autres
+ * portent les paroles, ce qui a sa valeur, mais un visiteur qui parcourt la
+ * liste tombe sur une page non chantable 99 fois sur 100 — et conclut que le
+ * site ne marche pas, au lieu de comprendre que le catalogue démarre.
+ *
+ * L'API REST ne filtre sur aucune méta par défaut : sans ce filtre, le front ne
+ * peut pas distinguer les deux, sauf à parcourir les 146 pages du catalogue.
+ */
+add_filter( 'rest_karaoke_query', function ( $args, $request ) {
+	if ( '1' !== (string) $request->get_param( 'jouable' ) ) {
+		return $args;
+	}
+	// EXISTS seul ne suffit pas : une méta créée puis vidée reste présente en base.
+	$args['meta_query'] = array(
+		array(
+			'key'     => MKARAKS_META['audio'],
+			'compare' => 'EXISTS',
+		),
+		array(
+			'key'     => MKARAKS_META['audio'],
+			'value'   => '',
+			'compare' => '!=',
+		),
+	);
+	return $args;
+}, 10, 2 );
+
+/** Déclare le paramètre pour qu'il apparaisse dans la description de la route. */
+add_filter( 'rest_karaoke_collection_params', function ( $params ) {
+	$params['jouable'] = array(
+		'description' => 'À 1, ne retourne que les chansons ayant un fichier audio.',
+		'type'        => 'string',
+		'enum'        => array( '0', '1' ),
+	);
+	return $params;
+} );

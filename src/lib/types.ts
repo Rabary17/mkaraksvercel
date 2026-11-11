@@ -15,6 +15,8 @@ export interface SongMedia {
   lyrics: string | null;
   chord: string | null;
   key: string | null; // tonalité, ex. "D Major"
+  bpm: string | null; // get_post_meta renvoie une chaîne, ex. "85"
+  genre: string | null; // casse non normalisée côté WordPress : "folk", "Reggae"
 }
 
 export interface Song {

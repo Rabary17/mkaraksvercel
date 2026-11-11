@@ -5,6 +5,8 @@ import { getSong, songUrl, toLite } from "@/lib/wp";
 import { SongPageActions } from "@/components/library/SongPageActions";
 import { LetterTile } from "@/components/ui/LetterTile";
 import { Icon } from "@/components/ui/Icon";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { estJouable, songDescription, songJsonLd } from "@/lib/seo";
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -19,9 +21,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const song = await getSong((await params).song);
   if (!song) return {};
   const artist = song.media.artist?.name ?? "";
+  // 0,8 % du catalogue est jouable : annoncer « karaoké » partout promettait au
+  // visiteur ce que la page ne tient pas, et renvoyait à Google un signal de
+  // deception a chaque arrivee.
   return {
-    title: `${song.title} – ${artist} (karaoké)`,
-    description: `Chante « ${song.title} » de ${artist} en karaoké, avec paroles synchronisées et accords.`,
+    title: `${song.title}${artist ? ` – ${artist}` : ""} (${estJouable(song) ? "karaoké" : "paroles"})`,
+    description: songDescription(song),
     alternates: { canonical: songUrl(song) },
   };
 }
@@ -36,6 +41,7 @@ export default async function SongPage({ params }: Params) {
 
   return (
     <article className="grid gap-8 lg:grid-cols-[minmax(0,420px)_1fr] lg:gap-12">
+      <JsonLd data={songJsonLd(song)} />
       {/* Colonne fiche (fixe sur desktop) */}
       <div className="space-y-6 lg:sticky lg:top-10 lg:self-start">
         <Link href={song.media.artist ? `/artiste/${song.media.artist.slug}` : "/"} className="icon-btn" aria-label="Retour">
