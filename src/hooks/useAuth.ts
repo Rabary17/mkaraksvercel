@@ -13,6 +13,7 @@ import {
   User,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { SESSION_EVENT } from "@/components/providers/UserProvider";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -30,6 +31,7 @@ export function useAuth() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ idToken }),
           });
+          window.dispatchEvent(new Event(SESSION_EVENT));
           setUser(firebaseUser);
         } catch (err) {
           console.error("Failed to create session:", err);

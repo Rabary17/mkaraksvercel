@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLibrary } from "@/components/providers/LibraryProvider";
 import { SongRow } from "@/components/library/SongRow";
 import { ArtistCard } from "@/components/library/ArtistCard";
+import { LoginNeeded } from "@/components/library/LoginNeeded";
 import { Icon } from "@/components/ui/Icon";
 
 /** Écran 06 « Mes favoris ». Sur desktop : titres et artistes côte à côte. */
@@ -12,6 +13,15 @@ export default function FavoritesPage() {
   const [tab, setTab] = useState<"songs" | "artists">("songs");
   const songs = lib.favorites.filter((f) => f.type === "song").map((f) => f.song!);
   const artists = lib.favorites.filter((f) => f.type === "artist").map((f) => f.artist!);
+
+  if (lib.ready && !lib.loggedIn) {
+    return (
+      <div className="space-y-6 md:space-y-8">
+        <h1 className="h-display text-[32px] md:text-5xl">Mes favoris</h1>
+        <LoginNeeded icon="favorite" text="Connecte-toi pour retrouver tes favoris sur tous tes appareils." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8">

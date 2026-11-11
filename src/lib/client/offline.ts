@@ -1,6 +1,6 @@
 "use client";
 import type { MediaKind, SongManifest } from "@/lib/types";
-import { db, notifyLibrary, type SongLite } from "./db";
+import { db, LIBRARY_CACHE_KEY, notifyLibrary, type SongLite } from "./db";
 import { getPrefs } from "./prefs";
 import { ensureOfflineDecoder } from "./decrypt";
 
@@ -101,10 +101,12 @@ export async function listDownloads() {
   return (await db()).getAll("songs");
 }
 
-/** À la déconnexion : on efface tout ce qui est lié au compte sur cet appareil. */
+/** À la déconnexion : on efface les téléchargements et la copie hors ligne de la bibliothèque. */
 export async function clearAllDownloads() {
   await caches.delete(MEDIA_CACHE);
-  const d = await db();
-  await Promise.all([d.clear("songs"), d.clear("favorites"), d.clear("playlists")]);
+  await (await db()).clear("songs");
+  try {
+    localStorage.removeItem(LIBRARY_CACHE_KEY);
+  } catch {}
   notifyLibrary();
 }

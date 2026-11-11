@@ -1,16 +1,11 @@
 "use client";
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { SongManifest } from "@/lib/types";
+import type { FavoriteRec, PlaylistRec } from "@/lib/library-types";
 
-/** Données minimales d'un titre, suffisantes pour l'afficher et le lancer hors ligne. */
-export interface SongLite {
-  songId: number;
-  title: string;
-  artist: string;
-  artistSlug?: string;
-  url: string;
-}
+export { PLAYLIST_COLORS, type FavoriteRec, type PlaylistColor, type PlaylistRec, type SongLite } from "@/lib/library-types";
 
+/** Téléchargements hors ligne : fichiers chiffrés sur l'appareil. */
 export interface DownloadRec extends SongManifest {
   savedAt: number;
   bytes: number;
@@ -18,26 +13,7 @@ export interface DownloadRec extends SongManifest {
   artistSlug?: string;
 }
 
-export interface FavoriteRec {
-  key: string; // "song:123" | "artist:slug"
-  type: "song" | "artist";
-  addedAt: number;
-  song?: SongLite;
-  artist?: { slug: string; name: string; count?: number };
-}
-
-export interface PlaylistRec {
-  id: string;
-  name: string;
-  color: PlaylistColor;
-  songs: SongLite[];
-  offline: boolean;
-  createdAt: number;
-}
-
-export const PLAYLIST_COLORS = ["yellow", "pink", "teal", "violet", "orange"] as const;
-export type PlaylistColor = (typeof PLAYLIST_COLORS)[number];
-
+/** Favoris et playlists locaux d'avant le passage au compte : importés puis vidés au login. */
 interface MkDB extends DBSchema {
   songs: { key: number; value: DownloadRec };
   favorites: { key: string; value: FavoriteRec };
@@ -58,6 +34,9 @@ export function db() {
   });
   return dbPromise;
 }
+
+/** Copie hors ligne des favoris et playlists du compte (localStorage). */
+export const LIBRARY_CACHE_KEY = "mk:library-cache";
 
 /** Prévient l'interface qu'une donnée locale a changé. */
 export const LIB_EVENT = "mk:library";
