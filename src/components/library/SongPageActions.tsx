@@ -57,7 +57,7 @@ export function SongPageActions({ song }: { song: SongLite }) {
         <button onClick={() => lib.toggleFavSong(song)} className="icon-btn size-14" aria-label={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}>
           <Icon name="favorite" filled={isFav} size={26} className="text-pink" />
         </button>
-        <button onClick={() => setPlOpen(true)} className="icon-btn size-14" aria-label="Ajouter à une playlist">
+        <button onClick={() => (lib.loggedIn ? setPlOpen(true) : router.push("/connexion"))} className="icon-btn size-14" aria-label="Ajouter à une playlist">
           <Icon name="playlist_add" size={26} />
         </button>
       </div>

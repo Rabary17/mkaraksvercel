@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
+import { getUid } from "@/lib/firebase-session";
 import { getSongById } from "@/lib/wp";
 import { deriveFileKey, safeObjectPath } from "@/lib/media-keys";
 import { env } from "@/lib/env";
@@ -10,8 +10,7 @@ import { MEDIA_KINDS, type SongManifest } from "@/lib/types";
  * Les fichiers servis par /media sont chiffrés : sans cette réponse, ils sont inutilisables.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getSession();
-  if (!user) return NextResponse.json({ error: "login_required" }, { status: 401 });
+  if (!(await getUid())) return NextResponse.json({ error: "login_required" }, { status: 401 });
 
   const id = Number((await params).id);
   if (!Number.isInteger(id) || id <= 0) return NextResponse.json({ error: "bad_id" }, { status: 400 });

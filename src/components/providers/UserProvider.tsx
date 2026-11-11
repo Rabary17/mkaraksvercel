@@ -19,6 +19,8 @@ export function useUser() {
 }
 
 const CACHED_USER = "mk:user";
+/** Émis après un login ou un logout Firebase : l'état de session est relu. */
+export const SESSION_EVENT = "mk:session";
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -45,6 +47,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const onSession = () => void refresh();
+    window.addEventListener(SESSION_EVENT, onSession);
+    return () => window.removeEventListener(SESSION_EVENT, onSession);
+  }, [refresh]);
+
+  useEffect(() => {
     void refresh();
     const update = () => setOnline(navigator.onLine);
     update();
@@ -57,8 +65,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const logout = useCallback(async () => {
-    if (!confirm("Te déconnecter supprime aussi tes chansons téléchargées, favoris et playlists de cet appareil. Continuer ?")) return;
+    if (!confirm("Te déconnecter retire les chansons téléchargées de cet appareil. Tes favoris et playlists restent dans ton compte. Continuer ?")) return;
     await fetch("/api/auth/logout", { method: "POST" });
+    const [{ signOut }, { auth }] = await Promise.all([import("firebase/auth"), import("@/lib/firebase")]);
+    await signOut(auth).catch(() => {});
     await clearAllDownloads();
     try {
       localStorage.removeItem(CACHED_USER);
