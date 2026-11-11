@@ -31,8 +31,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
-      <Blobs />
+    <div className="flex min-h-dvh flex-col">
+      {/* Mobile seulement : sur desktop, les formes viennent du layout (auth) */}
+      <div className="relative h-40 overflow-hidden md:hidden">
+        <Blobs />
+      </div>
       <div className="flex flex-1 flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm space-y-8">
           <Logo />
