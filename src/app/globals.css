@@ -170,6 +170,37 @@ body {
   }
 }
 
+/* Paroles : taille interpolée entre la ligne qui s'éteint (--e 0) et celle qui s'allume (--e 1) */
+.lyric-line {
+  --lo: 22px;
+  --hi: 28px;
+  font-size: calc(var(--lo) + (var(--hi) - var(--lo)) * var(--e, 0));
+  line-height: 1.25;
+  transition:
+    font-size 250ms linear,
+    color 250ms ease;
+}
+@media (min-width: 768px) {
+  .lyric-line {
+    --lo: 28px;
+    --hi: 36px;
+  }
+}
+@media (min-width: 1024px) {
+  .lyric-line {
+    --lo: 32px;
+    --hi: 48px;
+  }
+}
+
+/* Remplissage gauche → droite de chaque mot chanté */
+.karaoke-fill {
+  background-image: linear-gradient(to right, var(--color-pink) var(--p, 0%), #fff var(--p, 0%));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 /* Barre de progression du lecteur (curseur jaune) */
 .range-yellow {
   -webkit-appearance: none;

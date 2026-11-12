@@ -11,6 +11,7 @@ import { useLibrary } from "@/components/providers/LibraryProvider";
 import { getPrefs, setPrefs } from "@/lib/client/prefs";
 import { transposeChord } from "./chords";
 
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const LYRICS_DELAY_MIN = 0.1;
 const LYRICS_DELAY_MAX = 1.9;
 
@@ -143,10 +144,20 @@ function FullPlayer() {
   }, [p.lyrics, t]);
   const wordChords = useMemo(() => chordsOverWords(p.lyrics, p.chords), [p.lyrics, p.chords]);
 
+  const ANTICIPATION = 0.5;
+  const nextStart = p.lyrics[lineIdx + 1]?.start;
+  const ramp = nextStart === undefined ? 0 : clamp01((t - (nextStart - ANTICIPATION)) / ANTICIPATION);
+  const focusIdx = ramp >= 0.5 ? lineIdx + 1 : lineIdx;
+  function focusOf(i: number) {
+    if (i === lineIdx) return nextStart === undefined ? 1 : 1 - ramp;
+    if (i === lineIdx + 1) return ramp;
+    return 0;
+  }
+
   useEffect(() => {
-    const el = lyricsRef.current?.querySelector<HTMLElement>(`[data-line="${Math.max(0, lineIdx)}"]`);
+    const el = lyricsRef.current?.querySelector<HTMLElement>(`[data-line="${Math.max(0, focusIdx)}"]`);
     el?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [lineIdx]);
+  }, [focusIdx]);
 
   const pct = p.duration ? (p.time / p.duration) * 100 : 0;
   const isFav = lib.isFavSong(c.songId);
@@ -236,11 +247,8 @@ function FullPlayer() {
               return (
                 <div key={i} data-line={i} className="transition-all duration-300">
                   <p
-                    className={`font-extrabold transition-all duration-300 ${
-                      active
-                        ? "text-[28px] leading-[1.2] text-white md:text-4xl lg:text-5xl"
-                        : `text-[22px] leading-snug md:text-[28px] lg:text-[32px] ${past ? "text-white/30" : "text-white/55"}`
-                    }`}
+                    className={`lyric-line font-extrabold ${focusOf(i) > 0.5 ? "text-white" : past ? "text-white/30" : "text-white/55"}`}
+                    style={{ "--e": focusOf(i) } as React.CSSProperties}
                   >
                     {line.words.map((w, j) => {
                       const chord = showChords ? wordChords[i]?.[j] : undefined;
@@ -251,7 +259,12 @@ function FullPlayer() {
                               {transposeChord(chord, p.pitch)}
                             </span>
                           )}
-                          <span className={active && t >= w.start ? "text-pink" : undefined}>{w.word}</span>&nbsp;
+                          <span
+                            className={active ? "karaoke-fill" : undefined}
+                            style={active ? ({ "--p": `${clamp01((t - w.start) / Math.max(w.end - w.start, 0.2)) * 100}%` } as React.CSSProperties) : undefined}
+                          >
+                            {w.word}
+                          </span>&nbsp;
                         </span>
                       );
                     })}
