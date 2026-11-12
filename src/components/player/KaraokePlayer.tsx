@@ -244,11 +244,13 @@ function FullPlayer() {
             {p.lyrics.map((line, i) => {
               const active = i === lineIdx;
               const past = i < lineIdx;
+              const e = focusOf(i);
+              const base = past ? 0.3 : 0.55;
               return (
                 <div key={i} data-line={i} className="transition-all duration-300">
                   <p
-                    className={`lyric-line font-extrabold ${focusOf(i) > 0.5 ? "text-white" : past ? "text-white/30" : "text-white/55"}`}
-                    style={{ "--e": focusOf(i) } as React.CSSProperties}
+                    className="lyric-line font-extrabold"
+                    style={{ "--e": e, "--a": base + (1 - base) * e } as React.CSSProperties}
                   >
                     {line.words.map((w, j) => {
                       const chord = showChords ? wordChords[i]?.[j] : undefined;
@@ -259,11 +261,20 @@ function FullPlayer() {
                               {transposeChord(chord, p.pitch)}
                             </span>
                           )}
-                          <span
-                            className={active ? "karaoke-fill" : undefined}
-                            style={active ? ({ "--p": `${clamp01((t - w.start) / Math.max(w.end - w.start, 0.2)) * 100}%` } as React.CSSProperties) : undefined}
-                          >
+                          <span className="relative inline-block">
                             {w.word}
+                            <span
+                              aria-hidden
+                              className="karaoke-over"
+                              style={
+                                {
+                                  "--p": `${(active ? clamp01((t - w.start) / Math.max(w.end - w.start, 0.2)) : 0) * 100}%`,
+                                  "--o": active && t >= w.start ? 1 : 0,
+                                } as React.CSSProperties
+                              }
+                            >
+                              {w.word}
+                            </span>
                           </span>&nbsp;
                         </span>
                       );

@@ -176,9 +176,10 @@ body {
   --hi: 28px;
   font-size: calc(var(--lo) + (var(--hi) - var(--lo)) * var(--e, 0));
   line-height: 1.25;
+  color: rgb(255 255 255 / var(--a, 0.55));
   transition:
-    font-size 250ms linear,
-    color 250ms ease;
+    font-size 420ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    color 420ms ease;
 }
 @media (min-width: 768px) {
   .lyric-line {
@@ -193,12 +194,17 @@ body {
   }
 }
 
-/* Remplissage gauche → droite de chaque mot chanté */
-.karaoke-fill {
-  background-image: linear-gradient(to right, var(--color-pink) var(--p, 0%), #fff var(--p, 0%));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+/* Mise en évidence d'un mot : couche rose coupée de gauche à droite, apparition en fondu */
+.karaoke-over {
+  position: absolute;
+  inset: 0;
+  color: var(--color-pink);
+  clip-path: inset(0 calc(100% - var(--p, 0%)) 0 0);
+  opacity: var(--o, 0);
+  pointer-events: none;
+  transition:
+    clip-path 220ms linear,
+    opacity 320ms ease;
 }
 
 /* Barre de progression du lecteur (curseur jaune) */
