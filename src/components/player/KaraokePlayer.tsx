@@ -11,7 +11,8 @@ import { useLibrary } from "@/components/providers/LibraryProvider";
 import { getPrefs, setPrefs } from "@/lib/client/prefs";
 import { transposeChord } from "./chords";
 
-const LEAD = 0.3; // même avance que l'ancien lecteur pour le surlignage
+const LYRICS_DELAY_MIN = 0.1;
+const LYRICS_DELAY_MAX = 1.9;
 
 /** Lecteur : mini-barre en bas + plein écran (écrans 04 et 05 de la maquette). */
 export function KaraokePlayer() {
@@ -85,15 +86,38 @@ function MiniPlayer() {
 /* ------------------------------------------------------------------ */
 /* Plein écran                                                         */
 /* ------------------------------------------------------------------ */
+function LyricsDelayControl({ value, onChange, className = "" }: { value: number; onChange: (v: number) => void; className?: string }) {
+  return (
+    <label className={`flex items-center justify-center gap-3 text-sm font-bold text-white/80 ${className}`}>
+      Décalage des paroles
+      <input
+        type="range"
+        min={LYRICS_DELAY_MIN}
+        max={LYRICS_DELAY_MAX}
+        step={0.1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-40 accent-yellow"
+        aria-label="Décalage des paroles"
+      />
+      <span className="w-12 tabular-nums">{value.toFixed(1)} s</span>
+    </label>
+  );
+}
+
 function FullPlayer() {
   const p = usePlayer();
   const lib = useLibrary();
   const c = p.current!;
   const [showChords, setShowChords] = useState(true);
+  const [lyricsDelay, setLyricsDelay] = useState(LYRICS_DELAY_MIN);
   const [pitchOpen, setPitchOpen] = useState(false);
   const lyricsRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setShowChords(getPrefs().showChords), []);
+  useEffect(() => {
+    setShowChords(getPrefs().showChords);
+    setLyricsDelay(getPrefs().lyricsDelay);
+  }, []);
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -111,7 +135,7 @@ function FullPlayer() {
     };
   }, [p]);
 
-  const t = p.time + LEAD;
+  const t = p.time - lyricsDelay;
   const lineIdx = useMemo(() => {
     let idx = -1;
     for (let i = 0; i < p.lyrics.length; i++) if (p.lyrics[i].start <= t) idx = i;
@@ -128,6 +152,11 @@ function FullPlayer() {
   const isFav = lib.isFavSong(c.songId);
   const isDl = lib.downloaded.has(c.songId);
   const song = { songId: c.songId, title: c.title, artist: c.artist, artistSlug: c.artistSlug, url: c.url ?? "/" };
+
+  function changeLyricsDelay(v: number) {
+    setLyricsDelay(v);
+    setPrefs({ lyricsDelay: v });
+  }
 
   function toggleChords() {
     setShowChords((v) => {
@@ -181,6 +210,7 @@ function FullPlayer() {
           <Icon name="music_note" size={20} /> Guitare · bientôt
         </span>
       </div>
+      <LyricsDelayControl value={lyricsDelay} onChange={changeLyricsDelay} className="mt-2 px-4 lg:hidden" />
 
       {/* Corps : paroles (+ panneau latéral sur desktop) */}
       <div className="relative flex min-h-0 flex-1">
@@ -260,6 +290,7 @@ function FullPlayer() {
               <Icon name="music_note" size={20} /> Guitare · bientôt
             </span>
           </div>
+          <LyricsDelayControl value={lyricsDelay} onChange={changeLyricsDelay} className="mt-4" />
 
           {p.queue.length > 1 && (
             <div>
