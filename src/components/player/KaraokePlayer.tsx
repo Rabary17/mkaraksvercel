@@ -216,7 +216,7 @@ function FullPlayer() {
       <div className="relative flex min-h-0 flex-1">
         <div
           ref={lyricsRef}
-          className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-[35dvh] text-center [mask-image:linear-gradient(transparent,black_18%,black_82%,transparent)] md:px-12"
+          className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-[20dvh] text-center [mask-image:linear-gradient(transparent,black_6%,black_94%,transparent)] md:px-12"
         >
           {p.status === "loading" && <p className="text-white/60">Chargement…</p>}
           {p.status === "login" && (
@@ -229,18 +229,17 @@ function FullPlayer() {
           )}
           {p.status === "error" && <p className="text-lg text-pink-soft">{p.error}</p>}
 
-          <div className="mx-auto max-w-3xl space-y-6 md:space-y-8">
+          <div className="mx-auto max-w-3xl space-y-3 md:space-y-4">
             {p.lyrics.map((line, i) => {
               const active = i === lineIdx;
               const past = i < lineIdx;
-              const lineProgress = active ? Math.min(1, Math.max(0, (t - line.start) / (line.end - line.start || 1))) : 0;
               return (
                 <div key={i} data-line={i} className="transition-all duration-300">
                   <p
                     className={`font-extrabold transition-all duration-300 ${
                       active
-                        ? "text-[34px] leading-[1.15] text-white md:text-5xl lg:text-6xl"
-                        : `text-[22px] leading-snug md:text-3xl ${past ? "text-white/30" : "text-white/55"}`
+                        ? "text-[28px] leading-[1.2] text-white md:text-4xl lg:text-5xl"
+                        : `text-[22px] leading-snug md:text-[28px] lg:text-[32px] ${past ? "text-white/30" : "text-white/55"}`
                     }`}
                   >
                     {line.words.map((w, j) => {
@@ -257,11 +256,6 @@ function FullPlayer() {
                       );
                     })}
                   </p>
-                  {active && (
-                    <div className="mx-auto mt-3 h-1.5 w-2/3 max-w-md overflow-hidden rounded-full bg-white/15">
-                      <div className="h-full rounded-full bg-pink" style={{ width: `${lineProgress * 100}%` }} />
-                    </div>
-                  )}
                 </div>
               );
             })}
