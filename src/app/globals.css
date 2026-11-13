@@ -237,6 +237,41 @@ body {
   scrollbar-width: none;
 }
 
+/* Loader : barres d'égaliseur, décalées pour un effet de signal */
+@keyframes mk-eq {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+.mk-eq-bar {
+  height: 100%;
+  transform-origin: bottom;
+  animation: mk-eq 900ms ease-in-out infinite;
+}
+
+/* Entrée de page : fondu et léger glissement à chaque navigation */
+@keyframes mk-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.mk-page-enter {
+  animation: mk-page-in 380ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     scroll-behavior: auto !important;
