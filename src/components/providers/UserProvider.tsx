@@ -2,7 +2,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SessionUser } from "@/lib/types";
-import { clearAllDownloads } from "@/lib/client/offline";
 
 interface UserCtx {
   user: SessionUser | null | undefined; // undefined = en cours de chargement
@@ -65,11 +64,10 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   const logout = useCallback(async () => {
-    if (!confirm("Te déconnecter retire les chansons téléchargées de cet appareil. Tes favoris et playlists restent dans ton compte. Continuer ?")) return;
+    if (!confirm("Te déconnecter ? Tes chansons téléchargées restent sur cet appareil. Tes favoris et playlists restent dans ton compte.")) return;
     await fetch("/api/auth/logout", { method: "POST" });
     const [{ signOut }, { auth }] = await Promise.all([import("firebase/auth"), import("@/lib/firebase")]);
     await signOut(auth).catch(() => {});
-    await clearAllDownloads();
     try {
       localStorage.removeItem(CACHED_USER);
     } catch {}
