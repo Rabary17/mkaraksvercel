@@ -182,7 +182,7 @@ function FullPlayer() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden bg-ink text-white" role="dialog" aria-label={`Lecteur : ${c.title}`}>
+    <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden bg-[var(--karaoke-bg)] text-white" role="dialog" aria-label={`Lecteur : ${c.title}`}>
       {/* Formes décoratives */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute -top-20 -right-24 size-80 rounded-full bg-violet/45 blur-[2px] md:size-[520px]" />

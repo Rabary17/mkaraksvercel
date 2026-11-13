@@ -5,6 +5,7 @@ import { PlayerProvider } from "@/components/player/PlayerProvider";
 import { KaraokePlayer } from "@/components/player/KaraokePlayer";
 import { UserProvider } from "@/components/providers/UserProvider";
 import { LibraryProvider } from "@/components/providers/LibraryProvider";
+import { PrefsApplier } from "@/components/providers/PrefsApplier";
 
 const unbounded = Unbounded({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-unbounded", display: "swap" });
 const figtree = Figtree({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-figtree", display: "swap" });
@@ -40,6 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-dvh antialiased">
+        <PrefsApplier />
         <UserProvider>
           <LibraryProvider>
             <PlayerProvider>
