@@ -5,7 +5,6 @@ import { usePlayer } from "@/components/player/PlayerProvider";
 import { getResume, type ResumeState } from "@/lib/client/prefs";
 import { formatTime } from "@/components/player/chords";
 import { Icon } from "@/components/ui/Icon";
-import { SearchBox } from "./SearchBox";
 import { AccountButton } from "@/components/layout/AppNav";
 
 /** Haut de l'accueil (écran 03) : salutation, recherche, carte « Reprendre ». */
@@ -39,7 +38,6 @@ export function HomeHero() {
             </>
           )}
         </h1>
-        <SearchBox />
       </div>
 
       {resume && (
