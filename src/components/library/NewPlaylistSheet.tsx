@@ -19,6 +19,7 @@ export function NewPlaylistSheet({ open, onClose, onCreated }: { open: boolean; 
     e.preventDefault();
     if (!name.trim()) return;
     const p = await lib.createPlaylist({ name: name.trim(), color, offline });
+    if (!p) return;
     setName("");
     onClose();
     onCreated?.(p); // après onClose : la navigation vers la playlist doit être la dernière

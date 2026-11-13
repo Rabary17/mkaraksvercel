@@ -1,6 +1,7 @@
 import "server-only";
 import { env } from "./env";
 import type { Artist, Song, SongMedia } from "./types";
+import { buildSearchIndex, type SearchIndex } from "./search-index";
 
 const REVALIDATE = 3600; // 1 h ; le webhook /api/revalidate force la mise à jour immédiate
 
@@ -103,6 +104,35 @@ export async function getArtists(page = 1) {
   const q = new URLSearchParams({ per_page: "60", page: String(page), orderby: "count", order: "desc", hide_empty: "true" });
   const { data, total } = await wpFetch<WpTerm[]>(`/wp/v2/artist?${q}`, ["artists"]);
   return { artists: data.map(toArtist), total };
+}
+
+/**
+ * Index de recherche : tout le catalogue (titres et artistes), gardé en mémoire un jour.
+ * La recherche floue se fait ensuite sans appel à WordPress.
+ */
+const INDEX_TTL_MS = 86_400_000;
+let indexMemo: { at: number; value: Promise<SearchIndex> } | null = null;
+
+export function getSearchIndex(): Promise<SearchIndex> {
+  if (!indexMemo || Date.now() - indexMemo.at > INDEX_TTL_MS) {
+    const value = buildSearchIndexFromWp().catch((e) => {
+      indexMemo = null;
+      throw e;
+    });
+    indexMemo = { at: Date.now(), value };
+  }
+  return indexMemo.value;
+}
+
+async function buildSearchIndexFromWp(): Promise<SearchIndex> {
+  const [songs, artists] = await Promise.all([
+    allPages<WpSong>("/wp/v2/karaoke?_fields=id,slug,title,mkaraks", SITEMAP_TAG),
+    allPages<WpTerm>("/wp/v2/artist?_fields=id,slug,name,count&hide_empty=true", SITEMAP_TAG),
+  ]);
+  return buildSearchIndex(
+    songs.map((s) => toLite(toSong(s))),
+    artists.map((t) => ({ slug: t.slug, name: decodeEntities(t.name), count: t.count })),
+  );
 }
 
 /** Vérifie identifiant/mot de passe auprès de WordPress (appel serveur à serveur). */

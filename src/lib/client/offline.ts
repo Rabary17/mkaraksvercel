@@ -1,6 +1,6 @@
 "use client";
 import type { MediaKind, SongManifest } from "@/lib/types";
-import { db, notifyLibrary, type SongLite } from "./db";
+import { db, LIBRARY_CACHE_KEY, notifyLibrary, type SongLite } from "./db";
 import { getPrefs } from "./prefs";
 import { ensureOfflineDecoder } from "./decrypt";
 
@@ -11,6 +11,8 @@ import { ensureOfflineDecoder } from "./decrypt";
  * Les fichiers restent chiffrés sur l'appareil ; sans manifeste valide ils sont illisibles.
  */
 const MEDIA_CACHE = "mkaraks-media";
+/** Sans le suffixe de version : les téléchargements déjà faits restent retrouvés. */
+const cacheKey = (src: string) => src.split("?")[0];
 
 export class LoginRequiredError extends Error {
   constructor() {
@@ -52,7 +54,7 @@ export async function resolveManifest(songId: number): Promise<SongManifest> {
 
 export async function getEncryptedFile(src: string): Promise<ArrayBuffer> {
   const cache = await caches.open(MEDIA_CACHE);
-  const hit = await cache.match(src);
+  const hit = await cache.match(cacheKey(src));
   if (hit) return hit.arrayBuffer();
   const res = await fetch(src, { credentials: "same-origin" });
   if (res.status === 401) throw new LoginRequiredError();
@@ -79,7 +81,7 @@ export async function downloadSong(song: SongLite, onProgress?: (done: number, t
     if (!res.ok) throw new Error(`media ${res.status}`);
     const blob = await res.blob();
     bytes += blob.size;
-    await cache.put(f.src, new Response(blob, { headers: { "Content-Type": "application/octet-stream" } }));
+    await cache.put(cacheKey(f.src), new Response(blob, { headers: { "Content-Type": "application/octet-stream" } }));
     onProgress?.(++done, entries.length);
   }
   await (await db()).put("songs", { ...manifest, savedAt: Date.now(), bytes, pageUrl: song.url, artistSlug: song.artistSlug });
@@ -92,7 +94,7 @@ export async function removeDownload(songId: number) {
   const m = await d.get("songs", songId);
   if (!m) return;
   const cache = await caches.open(MEDIA_CACHE);
-  await Promise.all(Object.values(m.files).map((f) => f && cache.delete(f.src)));
+  await Promise.all(Object.values(m.files).map((f) => f && cache.delete(cacheKey(f.src))));
   await d.delete("songs", songId);
   notifyLibrary();
 }
@@ -101,10 +103,12 @@ export async function listDownloads() {
   return (await db()).getAll("songs");
 }
 
-/** À la déconnexion : on efface tout ce qui est lié au compte sur cet appareil. */
+/** À la déconnexion : on efface les téléchargements et la copie hors ligne de la bibliothèque. */
 export async function clearAllDownloads() {
   await caches.delete(MEDIA_CACHE);
-  const d = await db();
-  await Promise.all([d.clear("songs"), d.clear("favorites"), d.clear("playlists")]);
+  await (await db()).clear("songs");
+  try {
+    localStorage.removeItem(LIBRARY_CACHE_KEY);
+  } catch {}
   notifyLibrary();
 }

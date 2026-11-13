@@ -1,5 +1,5 @@
 import "server-only";
-import { hkdfSync } from "node:crypto";
+import { createHash, hkdfSync } from "node:crypto";
 import { env } from "./env";
 
 /**
@@ -13,6 +13,11 @@ export function deriveFileKey(objectPath: string): Buffer {
 /** Le chemin WordPress (ex. "rossy/anilan ny tiana/instrumental.mp3") → objet chiffré dans le bucket. */
 export function encryptedObjectName(objectPath: string): string {
   return `${env.gcsPrefix}${objectPath}.enc`;
+}
+
+/** Version de repli de l'URL média, si la génération GCS n'est pas disponible. */
+export function mediaVersion(objectPath: string): string {
+  return createHash("sha256").update(objectPath).digest("hex").slice(0, 12);
 }
 
 /** Refuse tout chemin suspect avant de signer quoi que ce soit. */

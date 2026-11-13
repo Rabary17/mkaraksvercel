@@ -18,7 +18,7 @@ export default function PlaylistPage({ params }: { params: Promise<{ id: string 
   if (!pl)
     return (
       <div className="space-y-4">
-        <p className="text-muted">Playlist introuvable sur cet appareil.</p>
+        <p className="text-muted">Playlist introuvable.</p>
         <Link href="/playlists" className="font-bold text-pink">
           Retour aux playlists
         </Link>

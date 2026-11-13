@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLibrary } from "@/components/providers/LibraryProvider";
 import { NewPlaylistSheet } from "@/components/library/NewPlaylistSheet";
+import { LoginNeeded } from "@/components/library/LoginNeeded";
 import { PLAYLIST_BG } from "@/components/library/playlist-colors";
 import { Icon } from "@/components/ui/Icon";
 
@@ -13,6 +14,15 @@ export function PlaylistsView() {
   const params = useSearchParams();
   const open = params.get("nouvelle") === "1";
   const setOpen = (v: boolean) => router.replace(v ? "/playlists?nouvelle=1" : "/playlists", { scroll: false });
+
+  if (lib.ready && !lib.loggedIn) {
+    return (
+      <div className="space-y-6 md:space-y-8">
+        <h1 className="h-display text-[32px] md:text-5xl">Playlists</h1>
+        <LoginNeeded icon="queue_music" text="Connecte-toi pour créer tes playlists sur tous tes appareils." />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 md:space-y-8">

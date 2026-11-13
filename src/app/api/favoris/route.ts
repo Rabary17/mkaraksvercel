@@ -1,74 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
-import type { QueryDocumentSnapshot } from "firebase-admin/firestore";
-import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import { NextResponse } from "next/server";
+import { getUid } from "@/lib/firebase-session";
+import { parseFavorite, userCollection } from "@/lib/library-server";
 
-async function getUserFromSession(req: NextRequest) {
-  const sessionCookie = req.cookies.get("__session")?.value;
-  if (!sessionCookie) return null;
+const KEY = /^(song:\d{1,12}|artist:[^/]{1,200})$/;
 
-  try {
-    const decodedCookie = await adminAuth.verifySessionCookie(sessionCookie, true);
-    return decodedCookie.uid;
-  } catch {
-    return null;
-  }
+function unauthorized() {
+  return NextResponse.json({ error: "login_required" }, { status: 401 });
 }
 
-export async function GET(req: NextRequest) {
-  const uid = await getUserFromSession(req);
-  if (!uid) {
-    return NextResponse.json({ error: "login_required" }, { status: 401 });
-  }
-
-  const snapshot = await adminDb
-    .collection("users")
-    .doc(uid)
-    .collection("favoris")
-    .orderBy("addedAt", "desc")
-    .get();
-
-  const favoris = snapshot.docs.map((doc: QueryDocumentSnapshot) => doc.data());
-  return NextResponse.json(favoris);
+export async function GET() {
+  const uid = await getUid();
+  if (!uid) return unauthorized();
+  const snap = await userCollection(uid, "favorites").orderBy("addedAt", "desc").get();
+  return NextResponse.json(snap.docs.map((d) => d.data()));
 }
 
-export async function POST(req: NextRequest) {
-  const uid = await getUserFromSession(req);
-  if (!uid) {
-    return NextResponse.json({ error: "login_required" }, { status: 401 });
-  }
-
-  const { songId } = await req.json();
-  if (!songId) {
-    return NextResponse.json({ error: "songId requis" }, { status: 400 });
-  }
-
-  await adminDb
-    .collection("users")
-    .doc(uid)
-    .collection("favoris")
-    .doc(String(songId))
-    .set({ songId, addedAt: Date.now() }, { merge: true });
-
-  return NextResponse.json({ success: true });
+export async function POST(req: Request) {
+  const uid = await getUid();
+  if (!uid) return unauthorized();
+  const body = await req.json().catch(() => null);
+  const rec = parseFavorite({ ...body, addedAt: Date.now() });
+  if (!rec) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  await userCollection(uid, "favorites").doc(rec.key).set(rec);
+  return NextResponse.json(rec);
 }
 
-export async function DELETE(req: NextRequest) {
-  const uid = await getUserFromSession(req);
-  if (!uid) {
-    return NextResponse.json({ error: "login_required" }, { status: 401 });
-  }
-
-  const { songId } = await req.json();
-  if (!songId) {
-    return NextResponse.json({ error: "songId requis" }, { status: 400 });
-  }
-
-  await adminDb
-    .collection("users")
-    .doc(uid)
-    .collection("favoris")
-    .doc(String(songId))
-    .delete();
-
-  return NextResponse.json({ success: true });
+export async function DELETE(req: Request) {
+  const uid = await getUid();
+  if (!uid) return unauthorized();
+  const key = new URL(req.url).searchParams.get("key") ?? "";
+  if (!KEY.test(key)) return NextResponse.json({ error: "bad_request" }, { status: 400 });
+  await userCollection(uid, "favorites").doc(key).delete();
+  return NextResponse.json({ ok: true });
 }

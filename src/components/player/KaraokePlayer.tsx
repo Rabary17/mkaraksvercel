@@ -11,7 +11,9 @@ import { useLibrary } from "@/components/providers/LibraryProvider";
 import { getPrefs, setPrefs } from "@/lib/client/prefs";
 import { transposeChord } from "./chords";
 
-const LEAD = 0.3; // même avance que l'ancien lecteur pour le surlignage
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+const LYRICS_DELAY_MIN = 0.1;
+const LYRICS_DELAY_MAX = 1.9;
 
 /** Lecteur : mini-barre en bas + plein écran (écrans 04 et 05 de la maquette). */
 export function KaraokePlayer() {
@@ -85,15 +87,38 @@ function MiniPlayer() {
 /* ------------------------------------------------------------------ */
 /* Plein écran                                                         */
 /* ------------------------------------------------------------------ */
+function LyricsDelayControl({ value, onChange, className = "" }: { value: number; onChange: (v: number) => void; className?: string }) {
+  return (
+    <label className={`flex items-center justify-center gap-3 text-sm font-bold text-white/80 ${className}`}>
+      Décalage des paroles
+      <input
+        type="range"
+        min={LYRICS_DELAY_MIN}
+        max={LYRICS_DELAY_MAX}
+        step={0.1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-40 accent-yellow"
+        aria-label="Décalage des paroles"
+      />
+      <span className="w-12 tabular-nums">{value.toFixed(1)} s</span>
+    </label>
+  );
+}
+
 function FullPlayer() {
   const p = usePlayer();
   const lib = useLibrary();
   const c = p.current!;
   const [showChords, setShowChords] = useState(true);
+  const [lyricsDelay, setLyricsDelay] = useState(LYRICS_DELAY_MIN);
   const [pitchOpen, setPitchOpen] = useState(false);
   const lyricsRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setShowChords(getPrefs().showChords), []);
+  useEffect(() => {
+    setShowChords(getPrefs().showChords);
+    setLyricsDelay(getPrefs().lyricsDelay);
+  }, []);
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -111,7 +136,7 @@ function FullPlayer() {
     };
   }, [p]);
 
-  const t = p.time + LEAD;
+  const t = p.time - lyricsDelay;
   const lineIdx = useMemo(() => {
     let idx = -1;
     for (let i = 0; i < p.lyrics.length; i++) if (p.lyrics[i].start <= t) idx = i;
@@ -119,15 +144,30 @@ function FullPlayer() {
   }, [p.lyrics, t]);
   const wordChords = useMemo(() => chordsOverWords(p.lyrics, p.chords), [p.lyrics, p.chords]);
 
+  const ANTICIPATION = 0.5;
+  const nextStart = p.lyrics[lineIdx + 1]?.start;
+  const ramp = nextStart === undefined ? 0 : clamp01((t - (nextStart - ANTICIPATION)) / ANTICIPATION);
+  const focusIdx = ramp >= 0.5 ? lineIdx + 1 : lineIdx;
+  function focusOf(i: number) {
+    if (i === lineIdx) return nextStart === undefined ? 1 : 1 - ramp;
+    if (i === lineIdx + 1) return ramp;
+    return 0;
+  }
+
   useEffect(() => {
-    const el = lyricsRef.current?.querySelector<HTMLElement>(`[data-line="${Math.max(0, lineIdx)}"]`);
+    const el = lyricsRef.current?.querySelector<HTMLElement>(`[data-line="${Math.max(0, focusIdx)}"]`);
     el?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [lineIdx]);
+  }, [focusIdx]);
 
   const pct = p.duration ? (p.time / p.duration) * 100 : 0;
   const isFav = lib.isFavSong(c.songId);
   const isDl = lib.downloaded.has(c.songId);
   const song = { songId: c.songId, title: c.title, artist: c.artist, artistSlug: c.artistSlug, url: c.url ?? "/" };
+
+  function changeLyricsDelay(v: number) {
+    setLyricsDelay(v);
+    setPrefs({ lyricsDelay: v });
+  }
 
   function toggleChords() {
     setShowChords((v) => {
@@ -181,12 +221,13 @@ function FullPlayer() {
           <Icon name="music_note" size={20} /> Guitare · bientôt
         </span>
       </div>
+      <LyricsDelayControl value={lyricsDelay} onChange={changeLyricsDelay} className="mt-2 px-4 lg:hidden" />
 
       {/* Corps : paroles (+ panneau latéral sur desktop) */}
       <div className="relative flex min-h-0 flex-1">
         <div
           ref={lyricsRef}
-          className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-[35dvh] text-center [mask-image:linear-gradient(transparent,black_18%,black_82%,transparent)] md:px-12"
+          className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-[20dvh] text-center [mask-image:linear-gradient(transparent,black_6%,black_94%,transparent)] md:px-12"
         >
           {p.status === "loading" && <p className="text-white/60">Chargement…</p>}
           {p.status === "login" && (
@@ -199,19 +240,17 @@ function FullPlayer() {
           )}
           {p.status === "error" && <p className="text-lg text-pink-soft">{p.error}</p>}
 
-          <div className="mx-auto max-w-3xl space-y-6 md:space-y-8">
+          <div className="mx-auto max-w-3xl space-y-3 md:space-y-4">
             {p.lyrics.map((line, i) => {
               const active = i === lineIdx;
               const past = i < lineIdx;
-              const lineProgress = active ? Math.min(1, Math.max(0, (t - line.start) / (line.end - line.start || 1))) : 0;
+              const e = focusOf(i);
+              const base = past ? 0.3 : 0.55;
               return (
                 <div key={i} data-line={i} className="transition-all duration-300">
                   <p
-                    className={`font-extrabold transition-all duration-300 ${
-                      active
-                        ? "text-[34px] leading-[1.15] text-white md:text-5xl lg:text-6xl"
-                        : `text-[22px] leading-snug md:text-3xl ${past ? "text-white/30" : "text-white/55"}`
-                    }`}
+                    className="lyric-line font-extrabold"
+                    style={{ "--e": e, "--a": base + (1 - base) * e } as React.CSSProperties}
                   >
                     {line.words.map((w, j) => {
                       const chord = showChords ? wordChords[i]?.[j] : undefined;
@@ -222,16 +261,25 @@ function FullPlayer() {
                               {transposeChord(chord, p.pitch)}
                             </span>
                           )}
-                          <span className={active && t >= w.start ? "text-pink" : undefined}>{w.word}</span>&nbsp;
+                          <span className="relative inline-block">
+                            {w.word}
+                            <span
+                              aria-hidden
+                              className="karaoke-over"
+                              style={
+                                {
+                                  "--p": `${(active ? clamp01((t - w.start) / Math.max(w.end - w.start, 0.2)) : 0) * 112}%`,
+                                  "--o": active && t >= w.start ? 1 : 0,
+                                } as React.CSSProperties
+                              }
+                            >
+                              {w.word}
+                            </span>
+                          </span>&nbsp;
                         </span>
                       );
                     })}
                   </p>
-                  {active && (
-                    <div className="mx-auto mt-3 h-1.5 w-2/3 max-w-md overflow-hidden rounded-full bg-white/15">
-                      <div className="h-full rounded-full bg-pink" style={{ width: `${lineProgress * 100}%` }} />
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -260,6 +308,7 @@ function FullPlayer() {
               <Icon name="music_note" size={20} /> Guitare · bientôt
             </span>
           </div>
+          <LyricsDelayControl value={lyricsDelay} onChange={changeLyricsDelay} className="mt-4" />
 
           {p.queue.length > 1 && (
             <div>

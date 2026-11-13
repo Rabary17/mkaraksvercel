@@ -16,9 +16,6 @@ export const env = {
   get revalidateSecret() {
     return required("REVALIDATE_SECRET");
   },
-  get sessionSecret() {
-    return new TextEncoder().encode(required("SESSION_SECRET"));
-  },
   get gcsBucket() {
     return process.env.GCS_BUCKET || "mkaraksbucket";
   },

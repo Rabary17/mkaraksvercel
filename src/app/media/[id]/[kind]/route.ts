@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/session";
+import { getUid } from "@/lib/firebase-session";
 import { getSongById } from "@/lib/wp";
 import { signGcsUrl } from "@/lib/gcs";
 import { encryptedObjectName, safeObjectPath } from "@/lib/media-keys";
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
  * La réponse est streamée pour ne pas tomber sur la limite de taille des fonctions Vercel.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string; kind: string }> }) {
-  if (!(await getSession())) return new Response("login_required", { status: 401 });
+  if (!(await getUid())) return new Response("login_required", { status: 401 });
 
   const { id: rawId, kind } = await params;
   const id = Number(rawId);
@@ -31,7 +31,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const headers = new Headers({
     "Content-Type": "application/octet-stream",
-    "Cache-Control": "private, no-store",
+    "Cache-Control": "private, max-age=31536000, immutable",
     "X-Content-Type-Options": "nosniff",
   });
   const len = upstream.headers.get("Content-Length");

@@ -29,6 +29,14 @@ const serwist = new Serwist({
         plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 365 })],
       }),
     },
+    // Polices Google hébergées avec l'application : gardées un an pour fonctionner hors ligne.
+    {
+      matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith("/_next/static/media/"),
+      handler: new CacheFirst({
+        cacheName: "mkaraks-fonts",
+        plugins: [new ExpirationPlugin({ maxEntries: 40, maxAgeSeconds: 60 * 60 * 24 * 365 })],
+      }),
+    },
     ...defaultCache,
   ],
   fallbacks: {
