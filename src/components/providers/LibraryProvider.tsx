@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/components/providers/UserProvider";
 import { db, LIB_EVENT, LIBRARY_CACHE_KEY, type DownloadRec, type FavoriteRec, type PlaylistColor, type PlaylistRec, type SongLite } from "@/lib/client/db";
 import { downloadSong, removeDownload } from "@/lib/client/offline";
+import { syncPrefs } from "@/lib/client/prefs";
 
 /**
  * Favoris et playlists : la source de vérité est le compte (Firestore, via l'API).
@@ -97,6 +98,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     setFavorites([]);
     setPlaylists([]);
+    void syncPrefs();
     (async () => {
       await importLegacyLibrary().catch(() => {});
       try {

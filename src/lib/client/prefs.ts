@@ -28,8 +28,23 @@ function write(key: string, v: unknown) {
 export function getPrefs(): Prefs {
   return { ...DEFAULTS, ...(read<Partial<Prefs>>(PREFS_KEY) ?? {}) };
 }
+const PREFS_HEADERS = { "Content-Type": "application/json" };
+
 export function setPrefs(p: Partial<Prefs>) {
-  write(PREFS_KEY, { ...getPrefs(), ...p });
+  const next = { ...getPrefs(), ...p };
+  write(PREFS_KEY, next);
+  void fetch("/api/preferences", { method: "PUT", headers: PREFS_HEADERS, body: JSON.stringify(next) }).catch(() => {});
+}
+
+/** Au login : les préférences du compte remplacent celles de l'appareil ; s'il n'en a pas, on envoie les locales. */
+export async function syncPrefs() {
+  try {
+    const res = await fetch("/api/preferences", { cache: "no-store" });
+    if (!res.ok) return;
+    const { prefs } = (await res.json()) as { prefs: Partial<Prefs> | null };
+    if (prefs) write(PREFS_KEY, { ...DEFAULTS, ...prefs });
+    else await fetch("/api/preferences", { method: "PUT", headers: PREFS_HEADERS, body: JSON.stringify(getPrefs()) });
+  } catch {}
 }
 
 /** Carte « Reprendre » de l'accueil. */
