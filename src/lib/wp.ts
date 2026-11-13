@@ -105,6 +105,12 @@ export async function getArtists(page = 1) {
   return { artists: data.map(toArtist), total };
 }
 
+export async function searchArtists(search: string) {
+  const q = new URLSearchParams({ search, per_page: "12", orderby: "count", order: "desc", hide_empty: "true" });
+  const { data, total } = await wpFetch<WpTerm[]>(`/wp/v2/artist?${q}`, ["artists"]);
+  return { artists: data.map(toArtist), total };
+}
+
 /** Vérifie identifiant/mot de passe auprès de WordPress (appel serveur à serveur). */
 export async function wpLogin(username: string, password: string) {
   const res = await fetch(`${env.wpUrl}/wp-json/mkaraks/v1/auth`, {
