@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArtistCard } from "@/components/library/ArtistCard";
 import { SongGrid } from "@/components/library/SongRow";
 import { Icon } from "@/components/ui/Icon";
@@ -13,17 +14,15 @@ interface SearchResult {
   artistsTotal: number;
 }
 
-/** Recherche globale : les résultats se mettent à jour pendant la saisie, séparés en chansons et artistes. */
-export function SearchView({ initialQuery }: { initialQuery: string }) {
-  const [query, setQuery] = useState(initialQuery);
+/** Résultats complets de la recherche, lus dans l'URL (?q=) : la barre de recherche de l'application les met à jour. */
+export function SearchView() {
+  const query = (useSearchParams().get("q") ?? "").trim();
   const [result, setResult] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    const q = query.trim();
-    window.history.replaceState(null, "", q ? `/recherche?q=${encodeURIComponent(q)}` : "/recherche");
-    if (q.length < 2) {
+    if (query.length < 2) {
       setResult(null);
       setLoading(false);
       setError(false);
@@ -33,7 +32,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, { signal: ctrl.signal });
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: ctrl.signal });
         if (!res.ok) throw new Error(String(res.status));
         setResult((await res.json()) as SearchResult);
         setError(false);
@@ -49,23 +48,10 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
     };
   }, [query]);
 
-  const searching = query.trim().length >= 2;
+  const searching = query.length >= 2;
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="relative max-w-2xl">
-        <Icon name="search" size={24} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2" />
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Titre ou artiste…"
-          autoFocus={!initialQuery}
-          aria-label="Rechercher un titre ou un artiste"
-          className="field h-14 w-full pl-12"
-        />
-      </div>
-
       {!searching && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <Link href="/artistes" className="flex items-center gap-4 rounded-[24px] bg-lilac p-5 font-display text-lg font-bold">
