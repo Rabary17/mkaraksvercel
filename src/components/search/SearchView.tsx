@@ -87,11 +87,6 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
       {searching && result && (
         <div className={`grid gap-10 transition-opacity duration-300 lg:grid-cols-[minmax(0,1fr)_320px] ${loading ? "opacity-60" : "opacity-100"}`}>
           <section className="space-y-4">
-            <h2 className="h-section">Chansons · {result.songsTotal}</h2>
-            <SongGrid songs={result.songs} empty="Aucun titre trouvé. Essaie avec le nom de l’artiste." />
-          </section>
-
-          <section className="space-y-4">
             <h2 className="h-section">Artistes · {result.artistsTotal}</h2>
             {result.artists.length === 0 ? (
               <p className="text-muted">Aucun artiste trouvé.</p>
@@ -104,6 +99,11 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
                 ))}
               </ul>
             )}
+          </section>
+
+          <section className="space-y-4">
+            <h2 className="h-section">Chansons · {result.songsTotal}</h2>
+            <SongGrid songs={result.songs} empty="Aucun titre trouvé." />
           </section>
         </div>
       )}
