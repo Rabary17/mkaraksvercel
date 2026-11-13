@@ -85,7 +85,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
       {searching && !error && !result && <p className="text-muted">Recherche…</p>}
 
       {searching && result && (
-        <div className={`space-y-10 transition-opacity duration-300 ${loading ? "opacity-60" : "opacity-100"}`}>
+        <div className={`grid gap-10 transition-opacity duration-300 lg:grid-cols-[minmax(0,1fr)_320px] ${loading ? "opacity-60" : "opacity-100"}`}>
           <section className="space-y-4">
             <h2 className="h-section">Chansons · {result.songsTotal}</h2>
             <SongGrid songs={result.songs} empty="Aucun titre trouvé. Essaie avec le nom de l’artiste." />
@@ -96,7 +96,7 @@ export function SearchView({ initialQuery }: { initialQuery: string }) {
             {result.artists.length === 0 ? (
               <p className="text-muted">Aucun artiste trouvé.</p>
             ) : (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              <ul className="grid grid-cols-2 gap-3 lg:grid-cols-1">
                 {result.artists.map((a) => (
                   <li key={a.slug}>
                     <ArtistCard slug={a.slug} name={a.name} count={a.count} />
