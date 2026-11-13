@@ -1,5 +1,6 @@
 import { BottomNav, NavRail, Sidebar } from "@/components/layout/AppNav";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
+import { OfflineOverlay } from "@/components/layout/OfflineOverlay";
 
 /**
  * Coque de l'application :
@@ -10,6 +11,7 @@ import { OfflineBanner } from "@/components/layout/OfflineBanner";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <OfflineOverlay />
       <Sidebar />
       <NavRail />
       <div className="md:pl-[96px] lg:pl-[272px]">
