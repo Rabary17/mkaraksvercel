@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Figtree, Unbounded } from "next/font/google";
+import { Figtree, Fraunces, Inter, Outfit, Unbounded } from "next/font/google";
 import "./globals.css";
 import { PlayerProvider } from "@/components/player/PlayerProvider";
 import { KaraokePlayer } from "@/components/player/KaraokePlayer";
@@ -8,6 +8,9 @@ import { LibraryProvider } from "@/components/providers/LibraryProvider";
 
 const unbounded = Unbounded({ subsets: ["latin"], weight: ["700", "800"], variable: "--font-unbounded", display: "swap" });
 const figtree = Figtree({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-figtree", display: "swap" });
+const fraunces = Fraunces({ subsets: ["latin"], weight: ["400", "600", "700", "800"], variable: "--font-fraunces", display: "swap" });
+const outfit = Outfit({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-outfit", display: "swap" });
+const inter = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://mkaraks.com"),
@@ -26,7 +29,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="mg" className={`${unbounded.variable} ${figtree.variable}`}>
+    <html lang="mg" className={`${unbounded.variable} ${figtree.variable} ${fraunces.variable} ${outfit.variable} ${inter.variable}`}>
       <head>
         {/* Icônes de la maquette (Material Symbols Rounded) */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
