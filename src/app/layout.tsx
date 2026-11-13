@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   description: "Chante tes chansons malagasy préférées en karaoké, même sans connexion.",
   applicationName: "Mkaraks",
   appleWebApp: { capable: true, title: "Mkaraks", statusBarStyle: "default" },
+  icons: { apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
