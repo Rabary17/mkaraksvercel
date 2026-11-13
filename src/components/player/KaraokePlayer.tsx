@@ -268,7 +268,7 @@ function FullPlayer() {
                               className="karaoke-over"
                               style={
                                 {
-                                  "--p": `${(active ? clamp01((t - w.start) / Math.max(w.end - w.start, 0.2)) : 0) * 100}%`,
+                                  "--p": `${(active ? clamp01((t - w.start) / Math.max(w.end - w.start, 0.2)) : 0) * 112}%`,
                                   "--o": active && t >= w.start ? 1 : 0,
                                 } as React.CSSProperties
                               }
