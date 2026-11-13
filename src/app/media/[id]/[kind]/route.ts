@@ -31,7 +31,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const headers = new Headers({
     "Content-Type": "application/octet-stream",
-    "Cache-Control": "private, no-store",
+    "Cache-Control": "private, max-age=31536000, immutable",
     "X-Content-Type-Options": "nosniff",
   });
   const len = upstream.headers.get("Content-Length");
