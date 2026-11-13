@@ -114,6 +114,7 @@ function FullPlayer() {
   const [lyricsDelay, setLyricsDelay] = useState(LYRICS_DELAY_MIN);
   const [pitchOpen, setPitchOpen] = useState(false);
   const lyricsRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setShowChords(getPrefs().showChords);
@@ -155,9 +156,13 @@ function FullPlayer() {
   }
 
   useEffect(() => {
-    const el = lyricsRef.current?.querySelector<HTMLElement>(`[data-line="${Math.max(0, focusIdx)}"]`);
-    el?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [focusIdx]);
+    const box = lyricsRef.current;
+    const list = listRef.current;
+    const el = list?.querySelector<HTMLElement>(`[data-line="${Math.max(0, focusIdx)}"]`);
+    if (!box || !list || !el) return;
+    const y = el.offsetTop + el.offsetHeight / 2 - box.clientHeight / 2;
+    list.style.transform = `translate3d(0, ${-y}px, 0)`;
+  }, [focusIdx, p.lyrics]);
 
   const pct = p.duration ? (p.time / p.duration) * 100 : 0;
   const isFav = lib.isFavSong(c.songId);
@@ -227,7 +232,7 @@ function FullPlayer() {
       <div className="relative flex min-h-0 flex-1">
         <div
           ref={lyricsRef}
-          className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-[20dvh] text-center [mask-image:linear-gradient(transparent,black_6%,black_94%,transparent)] md:px-12"
+          className="min-h-0 flex-1 overflow-hidden px-5 text-center [mask-image:linear-gradient(transparent,black_6%,black_94%,transparent)] md:px-12"
         >
           {p.status === "loading" && <p className="text-white/60">Chargement…</p>}
           {p.status === "login" && (
@@ -240,14 +245,17 @@ function FullPlayer() {
           )}
           {p.status === "error" && <p className="text-lg text-pink-soft">{p.error}</p>}
 
-          <div className="mx-auto max-w-3xl space-y-3 md:space-y-4">
+          <div
+            ref={listRef}
+            className="relative mx-auto max-w-3xl space-y-3 py-[20dvh] transition-transform duration-500 ease-[cubic-bezier(0.22,0.61,0.36,1)] will-change-transform md:space-y-4"
+          >
             {p.lyrics.map((line, i) => {
               const active = i === lineIdx;
               const past = i < lineIdx;
               const e = focusOf(i);
               const base = past ? 0.3 : 0.55;
               return (
-                <div key={i} data-line={i} className="transition-all duration-300">
+                <div key={i} data-line={i}>
                   <p
                     className="lyric-line font-extrabold"
                     style={{ "--e": e, "--a": base + (1 - base) * e } as React.CSSProperties}
