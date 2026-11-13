@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getUid } from "@/lib/firebase-session";
 import { getSongById } from "@/lib/wp";
-import { deriveFileKey, safeObjectPath } from "@/lib/media-keys";
+import { gcsGeneration } from "@/lib/gcs";
+import { deriveFileKey, encryptedObjectName, mediaVersion, safeObjectPath } from "@/lib/media-keys";
 import { env } from "@/lib/env";
 import { MEDIA_KINDS, type SongManifest } from "@/lib/types";
 
@@ -18,12 +19,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const song = await getSongById(id);
   if (!song) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const files: SongManifest["files"] = {};
-  for (const kind of MEDIA_KINDS) {
-    const path = safeObjectPath(song.media[kind]);
-    if (!path) continue;
-    files[kind] = { src: `/media/${id}/${kind}`, key: deriveFileKey(path).toString("base64") };
-  }
+  const entries = await Promise.all(
+    MEDIA_KINDS.map(async (kind) => {
+      const path = safeObjectPath(song.media[kind]);
+      if (!path) return null;
+      const version = (await gcsGeneration(encryptedObjectName(path))) ?? mediaVersion(path);
+      return [kind, { src: `/media/${id}/${kind}?v=${version}`, key: deriveFileKey(path).toString("base64") }] as const;
+    }),
+  );
+  const files = Object.fromEntries(entries.filter((e) => e !== null)) as SongManifest["files"];
   if (!files.audio) return NextResponse.json({ error: "no_audio" }, { status: 404 });
 
   const manifest: SongManifest = {
