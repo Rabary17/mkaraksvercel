@@ -4,10 +4,11 @@ import type { QueueItem } from "@/components/player/PlayerProvider";
 export interface Prefs {
   wifiOnly: boolean;
   showChords: boolean;
+  lyricsDelay: number; // secondes de retard du surlignage des paroles
 }
 const PREFS_KEY = "mk:prefs";
 const RESUME_KEY = "mk:resume";
-const DEFAULTS: Prefs = { wifiOnly: true, showChords: true };
+const DEFAULTS: Prefs = { wifiOnly: true, showChords: true, lyricsDelay: 0.1 };
 
 function read<T>(key: string): T | null {
   try {
