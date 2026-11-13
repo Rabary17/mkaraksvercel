@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { getArtistSongs, getLatestSongs, searchArtists, toLite } from "@/lib/wp";
-import type { Song } from "@/lib/types";
+import { getLatestSongs, searchArtists, toLite } from "@/lib/wp";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-/** Priorité : titre, puis artiste, puis paroles (10 % d'importance). */
+/** Chansons : le titre passe avant les paroles (poids 10 %). Un titre qui ne correspond qu'à l'artiste n'est pas listé : l'artiste l'est. */
 const SCORE_TITLE = 1;
-const SCORE_ARTIST = 0.5;
 const SCORE_LYRICS = 0.1;
 
 export async function GET(req: Request) {
@@ -17,26 +15,28 @@ export async function GET(req: Request) {
   const key = norm(q);
 
   const [byText, artists] = await Promise.all([getLatestSongs(1, q), searchArtists(q)]);
-  const matchedArtists = artists.artists.filter((a) => norm(a.name).includes(key)).slice(0, 3);
-  const byArtist = (await Promise.all(matchedArtists.map((a) => getArtistSongs(a.id)))).flat();
 
-  const scored = new Map<number, { song: Song; score: number }>();
-  for (const song of [...byText.songs, ...byArtist]) {
-    if (scored.has(song.id)) continue;
-    const artistName = song.media.artist?.name ?? "";
-    const titleHit = norm(song.title).includes(key);
-    const artistHit = norm(artistName).includes(key) || matchedArtists.some((a) => a.id === song.media.artist?.id);
-    const score = titleHit ? SCORE_TITLE : artistHit ? SCORE_ARTIST : SCORE_LYRICS;
-    scored.set(song.id, { song, score });
-  }
-  const songs = [...scored.values()].sort((a, b) => b.score - a.score).map((x) => x.song);
+  const songs = byText.songs
+    .map((song) => ({
+      song,
+      titleHit: norm(song.title).includes(key),
+      artistHit: norm(song.media.artist?.name ?? "").includes(key),
+    }))
+    .filter((x) => x.titleHit || !x.artistHit)
+    .map((x) => ({ song: x.song, score: x.titleHit ? SCORE_TITLE : SCORE_LYRICS }))
+    .sort((a, b) => b.score - a.score)
+    .map((x) => toLite(x.song));
+
+  const matchedArtists = artists.artists
+    .filter((a) => norm(a.name).includes(key))
+    .map(({ slug, name, count }) => ({ slug, name, count }));
 
   return NextResponse.json(
     {
-      songs: songs.map(toLite),
+      songs,
       songsTotal: songs.length,
-      artists: artists.artists.map(({ slug, name, count }) => ({ slug, name, count })),
-      artistsTotal: artists.total,
+      artists: matchedArtists,
+      artistsTotal: matchedArtists.length,
     },
     { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
   );
