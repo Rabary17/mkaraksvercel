@@ -7,6 +7,8 @@ const withSerwist = withSerwistInit({
   cacheOnNavigation: true,
   reloadOnOnline: false, // ne pas couper une chanson en cours au retour du réseau
   disable: process.env.NODE_ENV === "development",
+  // La page hors ligne doit exister dans le cache dès l'installation du service worker.
+  additionalPrecacheEntries: [{ url: "/hors-ligne", revision: process.env.VERCEL_GIT_COMMIT_SHA ?? String(Date.now()) }],
 });
 
 const nextConfig: NextConfig = {

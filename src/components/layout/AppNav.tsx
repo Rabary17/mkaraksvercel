@@ -13,6 +13,7 @@ export const NAV = [
   { href: "/favoris", label: "Favoris", icon: "favorite" },
   { href: "/playlists", label: "Playlists", icon: "queue_music" },
   { href: "/hors-ligne", label: "Hors ligne", icon: "download_for_offline" },
+  { href: "/reglages", label: "Réglages", icon: "settings" },
 ];
 
 function useActive() {

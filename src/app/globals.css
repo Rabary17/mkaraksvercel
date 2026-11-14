@@ -171,7 +171,7 @@ body {
 
 /* Paroles : mise à l'échelle par transformation (aucun recalcul de mise en page, donc pas de saut) */
 .lyric-line {
-  font-size: 26px;
+  font-size: calc(26px * var(--lyrics-mult, 1));
   line-height: 1.25;
   transform: scale(calc(0.72 + 0.28 * var(--e, 0)));
   transform-origin: center;
@@ -183,12 +183,12 @@ body {
 }
 @media (min-width: 768px) {
   .lyric-line {
-    font-size: 34px;
+    font-size: calc(34px * var(--lyrics-mult, 1));
   }
 }
 @media (min-width: 1024px) {
   .lyric-line {
-    font-size: 44px;
+    font-size: calc(44px * var(--lyrics-mult, 1));
   }
 }
 
@@ -201,7 +201,7 @@ body {
 .karaoke-over {
   position: absolute;
   inset: 0;
-  color: var(--color-pink);
+  color: var(--highlight);
   -webkit-mask-image: linear-gradient(to right, #000 calc(var(--p) - 12%), transparent var(--p));
   mask-image: linear-gradient(to right, #000 calc(var(--p) - 12%), transparent var(--p));
   opacity: var(--o, 0);
@@ -209,6 +209,48 @@ body {
   transition:
     --p 220ms linear,
     opacity 320ms ease;
+}
+
+:root {
+  --karaoke-bg: var(--color-ink);
+  --highlight: var(--color-pink);
+  --lyrics-mult: 1;
+}
+html[data-title-font="fraunces"] {
+  --font-display: var(--font-fraunces), system-ui, sans-serif;
+}
+html[data-title-font="outfit"] {
+  --font-display: var(--font-outfit), system-ui, sans-serif;
+}
+html[data-title-font="inter"] {
+  --font-display: var(--font-inter), system-ui, sans-serif;
+}
+html[data-lyrics-font="fraunces"] .lyric-line {
+  font-family: var(--font-fraunces), serif;
+}
+html[data-lyrics-font="outfit"] .lyric-line {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+html[data-lyrics-font="inter"] .lyric-line {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+html[data-lyrics-size="small"] {
+  --lyrics-mult: 0.8;
+}
+html[data-lyrics-size="large"] {
+  --lyrics-mult: 1.25;
+}
+html[data-highlight="yellow"] {
+  --highlight: var(--color-yellow);
+}
+html[data-highlight="teal"] {
+  --highlight: var(--color-teal);
+}
+html[data-highlight="white"] {
+  --highlight: #ffffff;
+}
+html[data-karaoke-bg="dark"] {
+  --karaoke-bg: #0b0715;
 }
 
 /* Barre de progression du lecteur (curseur jaune) */

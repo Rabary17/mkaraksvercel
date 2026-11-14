@@ -1,6 +1,7 @@
 import { BottomNav, NavRail, Sidebar } from "@/components/layout/AppNav";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
+import { OfflineOverlay } from "@/components/layout/OfflineOverlay";
 
 /**
  * Coque de l'application :
@@ -11,6 +12,7 @@ import { GlobalSearch } from "@/components/search/GlobalSearch";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
+      <OfflineOverlay />
       <Sidebar />
       <NavRail />
       <div className="md:pl-[96px] lg:pl-[272px]">

@@ -11,8 +11,12 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#fff8ef",
     theme_color: "#fff8ef",
     lang: "mg",
-    // À remplacer par les vrais logos PNG 192/512 (voir README).
-    icons: [{ src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" }],
+    icons: [
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+    ],
     shortcuts: [
       { name: "Hors ligne", url: "/hors-ligne" },
       { name: "Favoris", url: "/favoris" },

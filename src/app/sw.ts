@@ -40,7 +40,7 @@ const serwist = new Serwist({
     ...defaultCache,
   ],
   fallbacks: {
-    entries: [{ url: "/hors-connexion", matcher: ({ request }) => request.destination === "document" }],
+    entries: [{ url: "/hors-ligne", matcher: ({ request }) => request.destination === "document" }],
   },
 });
 
