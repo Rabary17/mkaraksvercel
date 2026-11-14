@@ -2,7 +2,6 @@ import { BottomNav, NavRail, Sidebar } from "@/components/layout/AppNav";
 import { OfflineBanner } from "@/components/layout/OfflineBanner";
 import { OfflineOverlay } from "@/components/layout/OfflineOverlay";
 import { GlobalSearch } from "@/components/search/GlobalSearch";
-import { OfflineOverlay } from "@/components/layout/OfflineOverlay";
 
 /**
  * Coque de l'application :
